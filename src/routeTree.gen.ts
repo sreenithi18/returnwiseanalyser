@@ -10,11 +10,29 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReviewRouteImport } from './routes/review'
+import { Route as SessionRouteImport } from './routes/session'
+import { Route as UploadRouteImport } from './routes/upload'
 import { Route as ApiPublicReportTokenRouteImport } from './routes/api/public/report.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionRoute = SessionRouteImport.update({
+  id: '/session',
+  path: '/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UploadRoute = UploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicReportTokenRoute = ApiPublicReportTokenRouteImport.update({
@@ -25,27 +43,46 @@ const ApiPublicReportTokenRoute = ApiPublicReportTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/review': typeof ReviewRoute
+  '/session': typeof SessionRoute
+  '/upload': typeof UploadRoute
   '/api/public/report/$token': typeof ApiPublicReportTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/review': typeof ReviewRoute
+  '/session': typeof SessionRoute
+  '/upload': typeof UploadRoute
   '/api/public/report/$token': typeof ApiPublicReportTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/review': typeof ReviewRoute
+  '/session': typeof SessionRoute
+  '/upload': typeof UploadRoute
   '/api/public/report/$token': typeof ApiPublicReportTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/report/$token'
+  fullPaths:
+    '/' | '/review' | '/session' | '/upload' | '/api/public/report/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/report/$token'
-  id: '__root__' | '/' | '/api/public/report/$token'
+  to: '/' | '/review' | '/session' | '/upload' | '/api/public/report/$token'
+  id:
+    | '__root__'
+    | '/'
+    | '/review'
+    | '/session'
+    | '/upload'
+    | '/api/public/report/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ReviewRoute: typeof ReviewRoute
+  SessionRoute: typeof SessionRoute
+  UploadRoute: typeof UploadRoute
   ApiPublicReportTokenRoute: typeof ApiPublicReportTokenRoute
 }
 
@@ -56,6 +93,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/session': {
+      id: '/session'
+      path: '/session'
+      fullPath: '/session'
+      preLoaderRoute: typeof SessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/report/$token': {
@@ -70,6 +128,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ReviewRoute: ReviewRoute,
+  SessionRoute: SessionRoute,
+  UploadRoute: UploadRoute,
   ApiPublicReportTokenRoute: ApiPublicReportTokenRoute,
 }
 export const routeTree = rootRouteImport
