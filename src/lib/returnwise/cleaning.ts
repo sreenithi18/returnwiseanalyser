@@ -105,7 +105,7 @@ export function parseDate(v: unknown): [string | null, boolean] {
   m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);
   if (m) return [ymd(+m[3], +m[2], +m[1]), true]; // Indian DD/MM/YYYY
   m = s.match(/^(\d{1,2})[\s-]+([a-z]{3,9})[\s,-]+(\d{2,4})$/i);
-  if (m && MONTHS[m[2].slice(0, 4).toLowerCase()] ?? MONTHS[m?.[2]?.slice(0, 3).toLowerCase() ?? ""]) {
+  if (m) {
     const mo = MONTHS[m[2].slice(0, 3).toLowerCase()];
     return [mo ? ymd(+m[3], mo, +m[1]) : null, true];
   }
