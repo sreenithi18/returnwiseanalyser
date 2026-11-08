@@ -10,6 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ProductsRouteImport } from './routes/products'
+import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as SessionRouteImport } from './routes/session'
 import { Route as UploadRouteImport } from './routes/upload'
@@ -18,6 +21,21 @@ import { Route as ApiPublicReportTokenRouteImport } from './routes/api/public/re
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecommendationsRoute = RecommendationsRouteImport.update({
+  id: '/recommendations',
+  path: '/recommendations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewRoute = ReviewRouteImport.update({
@@ -43,6 +61,9 @@ const ApiPublicReportTokenRoute = ApiPublicReportTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/products': typeof ProductsRoute
+  '/recommendations': typeof RecommendationsRoute
   '/review': typeof ReviewRoute
   '/session': typeof SessionRoute
   '/upload': typeof UploadRoute
@@ -50,6 +71,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/products': typeof ProductsRoute
+  '/recommendations': typeof RecommendationsRoute
   '/review': typeof ReviewRoute
   '/session': typeof SessionRoute
   '/upload': typeof UploadRoute
@@ -58,6 +82,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/products': typeof ProductsRoute
+  '/recommendations': typeof RecommendationsRoute
   '/review': typeof ReviewRoute
   '/session': typeof SessionRoute
   '/upload': typeof UploadRoute
@@ -66,12 +93,30 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/review' | '/session' | '/upload' | '/api/public/report/$token'
+    | '/'
+    | '/dashboard'
+    | '/products'
+    | '/recommendations'
+    | '/review'
+    | '/session'
+    | '/upload'
+    | '/api/public/report/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/review' | '/session' | '/upload' | '/api/public/report/$token'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/products'
+    | '/recommendations'
+    | '/review'
+    | '/session'
+    | '/upload'
+    | '/api/public/report/$token'
   id:
     | '__root__'
     | '/'
+    | '/dashboard'
+    | '/products'
+    | '/recommendations'
     | '/review'
     | '/session'
     | '/upload'
@@ -80,6 +125,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  ProductsRoute: typeof ProductsRoute
+  RecommendationsRoute: typeof RecommendationsRoute
   ReviewRoute: typeof ReviewRoute
   SessionRoute: typeof SessionRoute
   UploadRoute: typeof UploadRoute
@@ -93,6 +141,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recommendations': {
+      id: '/recommendations'
+      path: '/recommendations'
+      fullPath: '/recommendations'
+      preLoaderRoute: typeof RecommendationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/review': {
@@ -128,6 +197,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  ProductsRoute: ProductsRoute,
+  RecommendationsRoute: RecommendationsRoute,
   ReviewRoute: ReviewRoute,
   SessionRoute: SessionRoute,
   UploadRoute: UploadRoute,
