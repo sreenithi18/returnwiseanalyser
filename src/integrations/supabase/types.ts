@@ -14,13 +14,192 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      rw_order_lines: {
+        Row: {
+          category: string
+          city: string | null
+          dedupe_key: string
+          discount: number
+          flag: string | null
+          id: number
+          order_date: string
+          order_ref: string
+          payment_type: string | null
+          platform: string
+          price: number
+          product_id: string
+          product_name: string
+          quantity: number
+          reason_category: string | null
+          return_date: string | null
+          return_reason: string | null
+          returned: boolean
+          returned_qty: number
+          session_id: string
+          shipping_method: string | null
+        }
+        Insert: {
+          category: string
+          city?: string | null
+          dedupe_key: string
+          discount?: number
+          flag?: string | null
+          id?: number
+          order_date: string
+          order_ref: string
+          payment_type?: string | null
+          platform: string
+          price: number
+          product_id: string
+          product_name: string
+          quantity: number
+          reason_category?: string | null
+          return_date?: string | null
+          return_reason?: string | null
+          returned?: boolean
+          returned_qty?: number
+          session_id: string
+          shipping_method?: string | null
+        }
+        Update: {
+          category?: string
+          city?: string | null
+          dedupe_key?: string
+          discount?: number
+          flag?: string | null
+          id?: number
+          order_date?: string
+          order_ref?: string
+          payment_type?: string | null
+          platform?: string
+          price?: number
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          reason_category?: string | null
+          return_date?: string | null
+          return_reason?: string | null
+          returned?: boolean
+          returned_qty?: number
+          session_id?: string
+          shipping_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rw_order_lines_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "rw_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rw_rejected_rows: {
+        Row: {
+          file_name: string
+          id: number
+          kind: string
+          reason: string
+          row_number: number
+          session_id: string
+        }
+        Insert: {
+          file_name: string
+          id?: number
+          kind: string
+          reason: string
+          row_number: number
+          session_id: string
+        }
+        Update: {
+          file_name?: string
+          id?: number
+          kind?: string
+          reason?: string
+          row_number?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rw_rejected_rows_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "rw_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rw_reports: {
+        Row: {
+          created_at: string
+          id: string
+          pdf_base64: string
+          session_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pdf_base64: string
+          session_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pdf_base64?: string
+          session_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rw_reports_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "rw_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rw_sessions: {
+        Row: {
+          confirmed: boolean
+          created_at: string
+          expires_at: string
+          file_count: number
+          id: string
+          is_demo: boolean
+          stats: Json
+          token_hash: string
+        }
+        Insert: {
+          confirmed?: boolean
+          created_at?: string
+          expires_at?: string
+          file_count?: number
+          id?: string
+          is_demo?: boolean
+          stats?: Json
+          token_hash: string
+        }
+        Update: {
+          confirmed?: boolean
+          created_at?: string
+          expires_at?: string
+          file_count?: number
+          id?: string
+          is_demo?: boolean
+          stats?: Json
+          token_hash?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      rw_purge_expired: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
