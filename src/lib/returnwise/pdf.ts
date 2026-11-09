@@ -76,6 +76,6 @@ export async function buildSummaryPdf(lines: Line[], month: string, dq: DQ, isDe
   doc.text("Recent months may show lower return rates because returns can still arrive. Recommendations are suggestions; savings are not guaranteed.", 40, y, { maxWidth: W - 80 });
 
   const blob = doc.output("blob");
-  const base64 = (doc.output("datauristring") as string).split(",")[1];
+  const base64 = (doc.output("datauristring") as string).split(",")[1] ?? "";
   return { base64, blob };
 }

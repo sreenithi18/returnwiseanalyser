@@ -136,7 +136,7 @@ export const uploadFile = createServerFn({ method: "POST" })
     let headers: string[];
     try {
       const wb = XLSX.read(bytes, { type: "array", cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
+      const ws = wb.Sheets[wb.SheetNames[0] ?? ""]!;
       const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false });
       headers = ((aoa[0] ?? []) as unknown[]).map((h) => String(h ?? "").trim());
       rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null, raw: true, blankrows: true });

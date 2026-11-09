@@ -70,7 +70,7 @@ function Dashboard({ lines, all }: { lines: Parameters<typeof kpis>[0]; all: Par
             <div className="mt-3 h-64"><ResponsiveContainer>
               <PieChart>
                 <Pie data={reasons} dataKey="count" nameKey="reason" innerRadius={55} outerRadius={90} paddingAngle={2}>
-                  {reasons.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  {reasons.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]!} />)}
                 </Pie>
                 <Tooltip /><Legend wrapperStyle={{ fontSize: 12 }} />
               </PieChart>

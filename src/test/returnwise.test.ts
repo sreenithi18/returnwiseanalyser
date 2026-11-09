@@ -22,7 +22,7 @@ describe("ReturnWise rules", () => {
     const r = await cleanRows([{ ...base, Price: "abc" }, { ...base, Order_ID: "B", Returned_Quantity: 5 }], new Set());
     expect(r.stats.rejected).toBe(1);
     expect(r.stats.flagged).toBe(1);
-    expect(r.clean[0].returned_qty).toBe(2);
+    expect(r.clean[0]!.returned_qty).toBe(2);
   });
   it("reports missing required columns", () => expect(mapHeaders(["Platform", "Order_ID"]).missing).toContain("Price"));
   it("parses mixed date formats", () => {

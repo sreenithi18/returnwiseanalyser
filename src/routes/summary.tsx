@@ -28,7 +28,7 @@ function Summary({ lines, month, info }: AnalysisCtx) {
   const [busy, setBusy] = useState<string | null>(null);
   const dq = info.stats.files.reduce((a, f) => ({ uploaded: a.uploaded + f.uploaded, valid: a.valid + f.valid, duplicates: a.duplicates + f.duplicates, rejected: a.rejected + f.rejected, flagged: a.flagged + f.flagged }), { uploaded: 0, valid: 0, duplicates: 0, rejected: 0, flagged: 0 });
   const ms = monthsIn(lines);
-  const period = month === "all" ? `${monthLabel(ms[0])} – ${monthLabel(ms[ms.length - 1])}` : monthLabel(month);
+  const period = month === "all" ? `${monthLabel(ms[0] ?? "all")} – ${monthLabel(ms[ms.length - 1] ?? "all")}` : monthLabel(month);
   const k = kpis(lines);
 
   async function pdf() {

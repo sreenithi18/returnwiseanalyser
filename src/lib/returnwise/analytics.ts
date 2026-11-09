@@ -32,7 +32,7 @@ export function filterMonth(lines: Line[], month: string): Line[] {
 }
 export function monthLabel(m: string): string {
   if (m === ALL_MONTHS) return "All months";
-  const [y, mo] = m.split("-").map(Number);
+  const [y = 2000, mo = 1] = m.split("-").map(Number);
   return new Date(Date.UTC(y, mo - 1, 1)).toLocaleString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
@@ -97,8 +97,8 @@ export function productStats(lines: Line[], minLines = MIN_ORDER_LINES_FOR_PROBL
     const primary = reasons[0]?.reason ?? null;
     out.push({
       product_id: pid,
-      product_name: ls[0].product_name,
-      category: ls[0].category,
+      product_name: ls[0]!.product_name,
+      category: ls[0]!.category,
       orderLines: ls.length,
       unitsSold: k.unitsSold,
       returnedUnits: k.returnedUnits,
