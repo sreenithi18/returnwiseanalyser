@@ -44,15 +44,15 @@ const MONTHS = [
 
 export function generateDemoRows(count = 600): Partial<Record<StdCol, unknown>>[] {
   const r = rng(42);
-  const pick = <T,>(a: readonly T[]) => a[Math.floor(r() * a.length)];
+  const pick = <T,>(a: readonly T[]) => a[Math.floor(r() * a.length)]!;
   const rows: Partial<Record<StdCol, unknown>>[] = [];
   for (let i = 0; i < count; i++) {
-    const p = PRODUCTS[i % PRODUCTS.length];
-    const [y, m] = MONTHS[Math.floor(r() * MONTHS.length)];
+    const p = PRODUCTS[i % PRODUCTS.length]!;
+    const [y, m] = MONTHS[Math.floor(r() * MONTHS.length)]!;
     const day = 1 + Math.floor(r() * 27);
     const qty = r() < 0.85 ? 1 : 2;
     const returned = r() < p.rate;
-    let reasonKey = p.reasons[0][0];
+    let reasonKey = p.reasons[0]![0];
     if (returned) {
       let x = r();
       for (const [k, w] of p.reasons) { if ((x -= w) <= 0) { reasonKey = k; break; } }
@@ -73,7 +73,7 @@ export function generateDemoRows(count = 600): Partial<Record<StdCol, unknown>>[
       Return_Status: returned ? "Returned" : "Not Returned",
       Return_Date: returned ? rd.toISOString().slice(0, 10) : null,
       Returned_Quantity: returned ? qty : null,
-      Return_Reason: returned ? pick(REASON_TEXT[reasonKey]) : null,
+      Return_Reason: returned ? pick(REASON_TEXT[reasonKey]!) : null,
       City: pick(["Mumbai", "Delhi", "Bengaluru", "Chennai", "Jaipur", "Pune"]),
     });
   }

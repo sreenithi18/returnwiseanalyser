@@ -63,7 +63,7 @@ const toInfo = (s: { created_at: string; expires_at: string; is_demo: boolean; c
 });
 
 export const startSession = createServerFn({ method: "POST" })
-  .inputValidator((i: { demo?: boolean }) => ({ demo: !!i?.demo }))
+  .validator((i: { demo?: boolean }) => ({ demo: !!i?.demo }))
   .handler(async ({ data }) => {
     const db = await admin();
     const token = randomToken();
@@ -84,7 +84,7 @@ export const startSession = createServerFn({ method: "POST" })
   });
 
 export const openSession = createServerFn({ method: "POST" })
-  .inputValidator(tokenInput)
+  .validator(tokenInput)
   .handler(async ({ data }) => {
     const db = await admin();
     const s = await loadSession(db, data.token);
@@ -105,7 +105,7 @@ export type UploadResult =
   | { ok: false; name: string; error: string; missing?: string[] };
 
 export const uploadFile = createServerFn({ method: "POST" })
-  .inputValidator((i: { token: string; fileName: string; base64: string; consent: boolean }) => {
+  .validator((i: { token: string; fileName: string; base64: string; consent: boolean }) => {
     const t = tokenInput(i);
     if (typeof i.fileName !== "string" || typeof i.base64 !== "string") throw new Error("Invalid upload");
     return { ...t, fileName: i.fileName.slice(0, 200), base64: i.base64, consent: i.consent === true };
@@ -136,7 +136,7 @@ export const uploadFile = createServerFn({ method: "POST" })
     let headers: string[];
     try {
       const wb = XLSX.read(bytes, { type: "array", cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
+      const ws = wb.Sheets[wb.SheetNames[0] ?? ""]!;
       const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false });
       headers = ((aoa[0] ?? []) as unknown[]).map((h) => String(h ?? "").trim());
       rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null, raw: true, blankrows: true });
@@ -168,7 +168,7 @@ export const uploadFile = createServerFn({ method: "POST" })
   });
 
 export const getReview = createServerFn({ method: "POST" })
-  .inputValidator(tokenInput)
+  .validator(tokenInput)
   .handler(async ({ data }) => {
     const db = await admin();
     const s = await requireSession(db, data.token);
@@ -183,7 +183,7 @@ export const getReview = createServerFn({ method: "POST" })
   });
 
 export const confirmAnalysis = createServerFn({ method: "POST" })
-  .inputValidator(tokenInput)
+  .validator(tokenInput)
   .handler(async ({ data }) => {
     const db = await admin();
     const s = await requireSession(db, data.token);
@@ -194,7 +194,7 @@ export const confirmAnalysis = createServerFn({ method: "POST" })
   });
 
 export const getLines = createServerFn({ method: "POST" })
-  .inputValidator(tokenInput)
+  .validator(tokenInput)
   .handler(async ({ data }) => {
     const db = await admin();
     const s = await requireSession(db, data.token);
@@ -210,7 +210,7 @@ export const getLines = createServerFn({ method: "POST" })
   });
 
 export const endSession = createServerFn({ method: "POST" })
-  .inputValidator(tokenInput)
+  .validator(tokenInput)
   .handler(async ({ data }) => {
     const db = await admin();
     await db.from("rw_sessions").delete().eq("token_hash", await sha256(data.token));
@@ -218,7 +218,7 @@ export const endSession = createServerFn({ method: "POST" })
   });
 
 export const saveReport = createServerFn({ method: "POST" })
-  .inputValidator((i: { token: string; pdfBase64: string }) => {
+  .validator((i: { token: string; pdfBase64: string }) => {
     const t = tokenInput(i);
     if (typeof i.pdfBase64 !== "string" || i.pdfBase64.length > 8_000_000) throw new Error("Invalid report");
     return { ...t, pdfBase64: i.pdfBase64 };

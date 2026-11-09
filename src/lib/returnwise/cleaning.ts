@@ -99,20 +99,20 @@ export function parseDate(v: unknown): [string | null, boolean] {
   const s = String(v).trim();
   let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
   if (m) {
-    const r = ymd(+m[1], +m[2], +m[3]);
+    const r = ymd(+m[1]!, +m[2]!, +m[3]!);
     return [r, r !== s];
   }
   m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);
-  if (m) return [ymd(+m[3], +m[2], +m[1]), true]; // Indian DD/MM/YYYY
+  if (m) return [ymd(+m[3]!, +m[2]!, +m[1]!), true]; // Indian DD/MM/YYYY
   m = s.match(/^(\d{1,2})[\s-]+([a-z]{3,9})[\s,-]+(\d{2,4})$/i);
   if (m) {
-    const mo = MONTHS[m[2].slice(0, 3).toLowerCase()];
-    return [mo ? ymd(+m[3], mo, +m[1]) : null, true];
+    const mo = MONTHS[m[2]!.slice(0, 3).toLowerCase()];
+    return [mo ? ymd(+m[3]!, mo, +m[1]!) : null, true];
   }
   m = s.match(/^([a-z]{3,9})[\s-]+(\d{1,2}),?[\s-]+(\d{2,4})$/i);
   if (m) {
-    const mo = MONTHS[m[1].slice(0, 3).toLowerCase()];
-    return [mo ? ymd(+m[3], mo, +m[2]) : null, true];
+    const mo = MONTHS[m[1]!.slice(0, 3).toLowerCase()];
+    return [mo ? ymd(+m[3]!, mo, +m[2]!) : null, true];
   }
   return [null, false];
 }
@@ -172,7 +172,7 @@ export async function cleanRows(
   const nameById = new Map<string, string>();
 
   for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
+    const r = rows[i]!;
     const rowNo = i + rowOffset;
     if (Object.values(r).every((v) => v == null || str(v) === "")) continue;
     stats.uploaded++;
