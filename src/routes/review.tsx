@@ -28,7 +28,7 @@ function Review() {
 
   if (!ready || q.isLoading) return null;
   if (!token || q.error) return <SimpleShell><StateMessage title={!token || isExpiredError(q.error) ? "Session expired, please start a new analysis." : "Could not load the review"} action={<Button asChild><Link to="/">Go to home</Link></Button>} /></SimpleShell>;
-  const { info, problems } = q.data!;
+  const { info, problems, counts } = q.data!;
   const files = info.stats.files;
   const t = files.reduce((a, f) => ({
     uploaded: a.uploaded + f.uploaded, valid: a.valid + f.valid, duplicates: a.duplicates + f.duplicates,
@@ -48,14 +48,14 @@ function Review() {
   }
 
   const tiles: [string, number][] = [
-    ["Rows uploaded", t.uploaded], ["Valid rows", t.valid], ["Duplicates removed", t.duplicates],
+    ["Rows uploaded", t.uploaded], ["Order lines (valid rows)", counts.orderLines], ["Orders (unique order IDs)", counts.orders], ["Duplicates removed", t.duplicates],
     ["Corrected", t.corrected], ["Rejected", t.rejected], ["Flagged (kept)", t.flagged],
   ];
   return (
     <SimpleShell>
       <h1 className="text-2xl font-bold">Cleaning Review</h1>
       <p className="mt-1 text-sm text-muted-foreground">Check what happened to your data before we analyse it.</p>
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {tiles.map(([l, v]) => (
           <div key={l} className="rounded-xl border bg-card p-4">
             <div className="text-xs text-muted-foreground">{l}</div>

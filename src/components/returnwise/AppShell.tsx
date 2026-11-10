@@ -1,12 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useEndSession } from "@/lib/returnwise/client";
+import { useEndSession, useToken } from "@/lib/returnwise/client";
+import { deletionNotice, shortId } from "@/lib/returnwise/format";
 import { ALL_MONTHS, monthLabel } from "@/lib/returnwise/analytics";
 
 const NAV = [
@@ -23,6 +26,35 @@ export function Logo() {
       ReturnWise
     </Link>
   );
+}
+
+/** Shortened Session ID with a copy button (copies the full ID). Renders nothing without a session. */
+export function SessionChip({ dark = false }: { dark?: boolean }) {
+  const { token } = useToken();
+  if (!token) return null;
+  return (
+    <div className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${dark ? "border-navy-foreground/30" : "bg-muted"}`}>
+      <span className="opacity-75">Session ID</span>
+      <code className="font-mono" title="Your Session ID (shortened)">{shortId(token)}</code>
+      <button
+        type="button"
+        aria-label="Copy full Session ID"
+        className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium ${dark ? "hover:bg-sidebar-accent" : "hover:bg-accent hover:text-accent-foreground"}`}
+        onClick={async () => {
+          try { await navigator.clipboard.writeText(token); toast.success("Full Session ID copied"); }
+          catch { toast.error("Could not copy. Please copy it from the Session page."); }
+        }}
+      >
+        <Copy className="h-3.5 w-3.5" /> Copy
+      </button>
+    </div>
+  );
+}
+
+function DeletionNotice({ expiresAt }: { expiresAt: string }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(t); }, []);
+  return <span className="hidden text-xs text-muted-foreground sm:inline">{deletionNotice(new Date(expiresAt), now)}</span>;
 }
 
 export function EndSessionButton({ variant = "outline" as const }: { variant?: "outline" | "destructive" }) {
@@ -54,7 +86,10 @@ export function SimpleShell({ children }: { children: ReactNode }) {
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <Logo />
-          <EndSessionButton />
+          <div className="flex flex-wrap items-center gap-2">
+            <SessionChip />
+            <EndSessionButton />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
@@ -71,7 +106,10 @@ export function AppShell({
     <div className="min-h-screen bg-background">
       <header className="border-b bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Logo />
+          <div className="flex flex-wrap items-center gap-3">
+            <Logo />
+            <SessionChip dark />
+          </div>
           <nav className="flex flex-wrap gap-1 text-sm" aria-label="Main">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} className="rounded-md px-3 py-1.5 opacity-80 hover:bg-sidebar-accent hover:opacity-100"
@@ -96,7 +134,7 @@ export function AppShell({
             {isDemo && <span className="rounded-full bg-warning px-3 py-1 text-xs font-semibold text-warning-foreground">Synthetic demo data</span>}
           </div>
           <div className="flex items-center gap-3">
-            {expiresAt && <span className="hidden text-xs text-muted-foreground sm:inline">Data deleted {new Date(expiresAt).toLocaleString("en-IN")}</span>}
+            {expiresAt && <DeletionNotice expiresAt={expiresAt} />}
             <EndSessionButton />
           </div>
         </div>
