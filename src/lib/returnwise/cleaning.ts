@@ -145,11 +145,6 @@ function normalizeReturnStatus(v: unknown): boolean | null {
 }
 const titleName = (s: string) => s.replace(/\s+/g, " ").trim();
 
-function randomRef(): string {
-  const b = new Uint8Array(5);
-  crypto.getRandomValues(b);
-  return "RW-" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("").toUpperCase();
-}
 export async function sha256(s: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf), (x) => x.toString(16).padStart(2, "0")).join("");
@@ -159,11 +154,13 @@ export async function sha256(s: string): Promise<string> {
  * Cleans projected rows. `seenKeys` holds dedupe keys already stored for the session
  * (cross-file duplicates); it is mutated with new keys.
  * `rowOffset` = spreadsheet row number of the first data row (header is row 1 → 2).
+ * `refSalt` (the session id) makes order references stable within a session but unlinkable to the real Order_ID.
  */
 export async function cleanRows(
   rows: Partial<Record<StdCol, unknown>>[],
   seenKeys: Set<string>,
   rowOffset = 2,
+  refSalt = "",
 ): Promise<{ clean: CleanRow[]; problems: Problem[]; stats: CleanStats }> {
   const clean: CleanRow[] = [];
   const problems: Problem[] = [];
@@ -238,7 +235,7 @@ export async function cleanRows(
     const payment = normalizePayment(r.Payment_Type);
     clean.push({
       dedupe_key: key,
-      order_ref: randomRef(),
+      order_ref: "RW-" + (await sha256(`${refSalt}|${platform}|${orderId.toLowerCase()}`)).slice(0, 12).toUpperCase(),
       platform,
       product_id: productId,
       product_name: name,

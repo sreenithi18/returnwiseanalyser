@@ -6,6 +6,8 @@ import {
 } from "./config";
 
 export interface Line {
+  /** Pseudonymous order reference: same value for every line of the same order. */
+  order_ref: string;
   platform: string;
   product_id: string;
   product_name: string;
@@ -39,26 +41,32 @@ export function monthLabel(m: string): string {
 export interface Kpis {
   unitsSold: number;
   revenue: number;
+  /** Unique order references. */
   orders: number;
+  /** Rows after cleaning (one per product in an order). */
+  orderLines: number;
+  /** Unique orders with at least one returned unit. */
   returnedOrders: number;
   returnedUnits: number;
   returnRate: number;
   returnLoss: number;
 }
 export function kpis(lines: Line[]): Kpis {
-  let unitsSold = 0, revenue = 0, returnedOrders = 0, returnedUnits = 0, returnLoss = 0;
+  let unitsSold = 0, revenue = 0, returnedUnits = 0, returnLoss = 0;
+  const orders = new Set<string>(), returnedOrders = new Set<string>();
   for (const l of lines) {
     const net = netUnitPrice(l.price, l.discount);
+    orders.add(l.order_ref);
     unitsSold += l.quantity;
     revenue += net * l.quantity;
     if (l.returned && l.returned_qty > 0) {
-      returnedOrders++;
+      returnedOrders.add(l.order_ref);
       returnedUnits += l.returned_qty;
       returnLoss += net * l.returned_qty;
     }
   }
   return {
-    unitsSold, revenue, orders: lines.length, returnedOrders, returnedUnits,
+    unitsSold, revenue, orders: orders.size, orderLines: lines.length, returnedOrders: returnedOrders.size, returnedUnits,
     returnRate: unitsSold ? returnedUnits / unitsSold : 0, returnLoss,
   };
 }
@@ -75,11 +83,15 @@ export interface ProductStat {
   product_id: string;
   product_name: string;
   category: string;
+  orders: number;
   orderLines: number;
   unitsSold: number;
   returnedUnits: number;
   returnRate: number;
+  /** Average list price per order line. */
   avgPrice: number;
+  /** Average net unit price after discount per order line. */
+  avgNetPrice: number;
   returnLoss: number;
   primaryReason: ReasonCategory | null;
   secondaryReason: ReasonCategory | null;
@@ -99,11 +111,13 @@ export function productStats(lines: Line[], minLines = MIN_ORDER_LINES_FOR_PROBL
       product_id: pid,
       product_name: ls[0]!.product_name,
       category: ls[0]!.category,
-      orderLines: ls.length,
+      orders: k.orders,
+      orderLines: k.orderLines,
       unitsSold: k.unitsSold,
       returnedUnits: k.returnedUnits,
       returnRate: k.returnRate,
       avgPrice: ls.reduce((s, l) => s + l.price, 0) / ls.length,
+      avgNetPrice: ls.reduce((s, l) => s + netUnitPrice(l.price, l.discount), 0) / ls.length,
       returnLoss: k.returnLoss,
       primaryReason: primary,
       secondaryReason: reasons[1]?.reason ?? null,
