@@ -28,12 +28,16 @@ export function PrivacyNotice() {
   );
 }
 
+let onceToken: string | null = null;
+
 function SessionPage() {
   const [token, setToken] = useState<string | null | undefined>(undefined);
   useEffect(() => {
-    const t = sessionStorage.getItem("returnwise_show_id");
+    const t = sessionStorage.getItem("returnwise_show_id") ?? onceToken;
     sessionStorage.removeItem("returnwise_show_id"); // shown once
+    onceToken = t;
     setToken(t);
+    return () => { setTimeout(() => { onceToken = null; }, 100); };
   }, []);
 
   if (token === undefined) return null;
