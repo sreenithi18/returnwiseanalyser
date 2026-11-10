@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { AnalysisPage, type AnalysisCtx } from "@/components/returnwise/AnalysisPage";
 import { Card } from "@/components/returnwise/AppShell";
 import { KpiGrid } from "./dashboard";
-import { TopProductCards } from "./products";
+import { LOSS_FORMULA, TopProductCards } from "./products";
 import { RecList } from "./recommendations";
 import { kpis, monthLabel, monthsIn, reasonCounts } from "@/lib/returnwise/analytics";
 import { getToken, inr, pct } from "@/lib/returnwise/client";
 import { buildSummaryPdf } from "@/lib/returnwise/pdf";
 import { saveReport } from "@/lib/returnwise/server.functions";
+import { fmtDateTime } from "@/lib/returnwise/format";
 
 export const Route = createFileRoute("/summary")({
   ssr: false,
@@ -23,10 +24,14 @@ export const Route = createFileRoute("/summary")({
   component: () => <AnalysisPage>{(c) => <Summary {...c} />}</AnalysisPage>,
 });
 
-function Summary({ lines, month, info }: AnalysisCtx) {
+function Summary({ lines, all, month, info }: AnalysisCtx) {
   const [link, setLink] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const dq = info.stats.files.reduce((a, f) => ({ uploaded: a.uploaded + f.uploaded, valid: a.valid + f.valid, duplicates: a.duplicates + f.duplicates, rejected: a.rejected + f.rejected, flagged: a.flagged + f.flagged }), { uploaded: 0, valid: 0, duplicates: 0, rejected: 0, flagged: 0 });
+  const allK = kpis(all);
+  const dq = {
+    ...info.stats.files.reduce((a, f) => ({ uploaded: a.uploaded + f.uploaded, valid: a.valid + f.valid, duplicates: a.duplicates + f.duplicates, rejected: a.rejected + f.rejected, flagged: a.flagged + f.flagged }), { uploaded: 0, valid: 0, duplicates: 0, rejected: 0, flagged: 0 }),
+    orders: allK.orders, orderLines: allK.orderLines,
+  };
   const ms = monthsIn(lines);
   const period = month === "all" ? `${monthLabel(ms[0] ?? "all")} – ${monthLabel(ms[ms.length - 1] ?? "all")}` : monthLabel(month);
   const k = kpis(lines);
@@ -57,7 +62,7 @@ function Summary({ lines, month, info }: AnalysisCtx) {
     const l = link ?? (await getLink());
     if (!l) return;
     const top = reasonCounts(lines)[0];
-    const text = `ReturnWise summary (${period}): ${k.orders} orders, return rate ${pct(k.returnRate)}, est. return loss ${inr(k.returnLoss)}.${top ? ` Top reason: ${top.reason}.` : ""} Report (valid until session expires): ${l}`;
+    const text = `ReturnWise summary (${period}): ${k.orders} orders (${k.orderLines} order lines), return rate (units) ${pct(k.returnRate)}, est. return loss ${inr(k.returnLoss)}.${top ? ` Top reason: ${top.reason}.` : ""} Report (valid until session expires): ${l}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
   }
 
@@ -66,7 +71,7 @@ function Summary({ lines, month, info }: AnalysisCtx) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Monthly Summary</h1>
-          <p className="text-sm text-muted-foreground">Reporting period: {period} · Generated {new Date().toLocaleString("en-IN")}</p>
+          <p className="text-sm text-muted-foreground">Reporting period: {period} · Generated {fmtDateTime(new Date())}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={pdf} disabled={!!busy}>{busy === "pdf" ? "Creating…" : "Generate PDF"}</Button>
@@ -82,11 +87,11 @@ function Summary({ lines, month, info }: AnalysisCtx) {
           {reasonCounts(lines).slice(0, 5).map((r) => <li key={r.reason}>{r.reason} — {r.count} units</li>)}
         </ol>
       </Card>
-      <section><h2 className="mb-3 text-lg font-semibold">Top 3 loss-causing products</h2><TopProductCards lines={lines} /></section>
+      <section><h2 className="text-lg font-semibold">Top 3 loss-causing products</h2><p className="mb-3 mt-1 text-sm text-muted-foreground">{LOSS_FORMULA}</p><TopProductCards lines={lines} /></section>
       <RecList lines={lines} />
       <Card>
         <h2 className="font-semibold">Data quality</h2>
-        <p className="mt-1 text-sm">{dq.uploaded} rows uploaded · {dq.valid} valid · {dq.duplicates} duplicates removed · {dq.rejected} rejected · {dq.flagged} flagged</p>
+        <p className="mt-1 text-sm">{dq.uploaded} rows uploaded · {dq.orderLines} order lines (valid rows) · {dq.orders} orders (unique order IDs) · {dq.duplicates} duplicates removed · {dq.rejected} rejected · {dq.flagged} flagged</p>
       </Card>
     </div>
   );

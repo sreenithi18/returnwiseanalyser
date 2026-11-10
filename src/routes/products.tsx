@@ -6,6 +6,9 @@ import { Card, StateMessage } from "@/components/returnwise/AppShell";
 import { productStats, topProblematic, type Line, type ProductStat } from "@/lib/returnwise/analytics";
 import { MIN_ORDER_LINES_FOR_PROBLEMATIC } from "@/lib/returnwise/config";
 import { inr, pct } from "@/lib/returnwise/client";
+import { InfoTip, RATE_LABEL, RATE_TIP, ReturnRateLabel } from "@/components/returnwise/InfoTip";
+
+export const LOSS_FORMULA = "Return loss = net unit price × returned units";
 
 export const Route = createFileRoute("/products")({
   ssr: false,
@@ -32,11 +35,13 @@ export function TopProductCards({ lines }: { lines: Line[] }) {
             <p className="font-mono text-xs text-muted-foreground">SKU {p.product_id}</p>
             <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
               <dt className="text-muted-foreground">Return loss</dt><dd className="font-bold">{inr(p.returnLoss)}</dd>
-              <dt className="text-muted-foreground">Return rate</dt><dd className="font-semibold">{pct(p.returnRate)}</dd>
+              <dt className="text-muted-foreground"><ReturnRateLabel /></dt><dd className="font-semibold">{pct(p.returnRate)}</dd>
               <dt className="text-muted-foreground">Units sold</dt><dd>{p.unitsSold}</dd>
               <dt className="text-muted-foreground">Returned units</dt><dd>{p.returnedUnits}</dd>
+              <dt className="text-muted-foreground">Orders</dt><dd>{p.orders}</dd>
               <dt className="text-muted-foreground">Order lines</dt><dd>{p.orderLines}</dd>
-              <dt className="text-muted-foreground">Avg price</dt><dd>{inr(p.avgPrice)}</dd>
+              <dt className="text-muted-foreground">Avg list price</dt><dd>{inr(p.avgPrice)}</dd>
+              <dt className="text-muted-foreground">Avg net price (after discount)</dt><dd>{inr(p.avgNetPrice)}</dd>
               <dt className="text-muted-foreground">Primary reason</dt><dd>{p.primaryReason ?? "—"}</dd>
               <dt className="text-muted-foreground">Secondary</dt><dd>{p.secondaryReason ?? "—"}</dd>
             </dl>
@@ -48,7 +53,7 @@ export function TopProductCards({ lines }: { lines: Line[] }) {
   );
 }
 
-type SortKey = "returnLoss" | "returnRate" | "orderLines" | "unitsSold" | "returnedUnits" | "product_name";
+type SortKey = "returnLoss" | "returnRate" | "orders" | "orderLines" | "avgPrice" | "avgNetPrice" | "unitsSold" | "returnedUnits" | "product_name";
 
 function Products({ lines }: { lines: Line[] }) {
   const [q, setQ] = useState("");
@@ -63,23 +68,30 @@ function Products({ lines }: { lines: Line[] }) {
         return (typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number)) * sort.dir;
       });
   }, [stats, q, sort]);
-  const th = (key: SortKey, label: string) => (
+  const th = (key: SortKey, label: string, tip?: string) => (
     <th className="px-3 py-2 font-semibold" aria-sort={sort.key === key ? (sort.dir === 1 ? "ascending" : "descending") : "none"}>
-      <button className="hover:underline" onClick={() => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }))}>
-        {label}{sort.key === key ? (sort.dir === 1 ? " ▲" : " ▼") : ""}
-      </button>
+      <span className="inline-flex items-center gap-1">
+        <button className="text-left hover:underline" onClick={() => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }))}>
+          {label}{sort.key === key ? (sort.dir === 1 ? " ▲" : " ▼") : ""}
+        </button>
+        {tip && <InfoTip tip={tip} label={`${label}: ${tip}`} />}
+      </span>
     </th>
   );
   return (
     <div className="space-y-6">
       <section>
-        <h1 className="mb-3 text-2xl font-bold">Top problematic products</h1>
+        <h1 className="text-2xl font-bold">Top problematic products</h1>
+        <p className="mb-3 mt-1 text-sm text-muted-foreground">{LOSS_FORMULA}</p>
         {stats.length === 1 && <p className="mb-3 text-sm text-muted-foreground">Your data contains only one product.</p>}
         <TopProductCards lines={lines} />
       </section>
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold">All products ({rows.length})</h2>
+          <div>
+            <h2 className="font-semibold">All products ({rows.length})</h2>
+            <p className="text-xs text-muted-foreground">{LOSS_FORMULA}</p>
+          </div>
           <label className="sr-only" htmlFor="psearch">Search products</label>
           <Input id="psearch" placeholder="Search name, SKU or category" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </div>
@@ -87,14 +99,15 @@ function Products({ lines }: { lines: Line[] }) {
           <table className="w-full text-sm">
             <thead className="bg-muted text-left"><tr>
               {th("product_name", "Product")}<th className="px-3 py-2 font-semibold">Category</th>
-              {th("orderLines", "Orders")}{th("unitsSold", "Units")}{th("returnedUnits", "Returned")}{th("returnRate", "Return rate")}{th("returnLoss", "Return loss")}
+              {th("orders", "Orders", "Unique order IDs")}{th("orderLines", "Order lines", "One row per product in an order")}{th("unitsSold", "Units")}{th("returnedUnits", "Returned")}{th("returnRate", RATE_LABEL, RATE_TIP)}{th("avgPrice", "Avg list price")}{th("avgNetPrice", "Avg net price (after discount)")}{th("returnLoss", "Return loss", "Net unit price × returned units")}
               <th className="px-3 py-2 font-semibold">Primary reason</th>
             </tr></thead>
             <tbody>{rows.map((p: ProductStat) => (
               <tr key={p.product_id} className="border-t">
-                <td className="px-3 py-2"><div className="font-medium">{p.product_name}</div><div className="font-mono text-xs text-muted-foreground">{p.product_id}{!p.qualifies && " · below min orders"}</div></td>
-                <td className="px-3 py-2">{p.category}</td><td className="px-3 py-2">{p.orderLines}</td><td className="px-3 py-2">{p.unitsSold}</td>
+                <td className="px-3 py-2"><div className="font-medium">{p.product_name}</div><div className="font-mono text-xs text-muted-foreground">{p.product_id}{!p.qualifies && " · below min order lines"}</div></td>
+                <td className="px-3 py-2">{p.category}</td><td className="px-3 py-2">{p.orders}</td><td className="px-3 py-2">{p.orderLines}</td><td className="px-3 py-2">{p.unitsSold}</td>
                 <td className="px-3 py-2">{p.returnedUnits}</td><td className="px-3 py-2">{pct(p.returnRate)}</td>
+                <td className="px-3 py-2">{inr(p.avgPrice)}</td><td className="px-3 py-2">{inr(p.avgNetPrice)}</td>
                 <td className="px-3 py-2 font-semibold">{inr(p.returnLoss)}</td><td className="px-3 py-2">{p.primaryReason ?? "—"}</td>
               </tr>
             ))}</tbody>

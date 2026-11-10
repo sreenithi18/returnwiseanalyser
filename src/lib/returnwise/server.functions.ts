@@ -72,7 +72,7 @@ export const startSession = createServerFn({ method: "POST" })
       .select("id").single();
     if (error || !s) throw new Error("Could not start a session");
     if (data.demo) {
-      const { clean, problems, stats } = await cleanRows(generateDemoRows(600), new Set());
+      const { clean, problems, stats } = await cleanRows(generateDemoRows(600), new Set(), 2, s.id);
       await insertClean(db, s.id, clean);
       await insertProblems(db, s.id, "Synthetic demo data", problems);
       await db.from("rw_sessions").update({
@@ -156,7 +156,7 @@ export const uploadFile = createServerFn({ method: "POST" })
       keys?.forEach((k) => seen.add(k.dedupe_key));
       if (!keys || keys.length < 1000) break;
     }
-    const { clean, problems, stats } = await cleanRows(projected, seen);
+    const { clean, problems, stats } = await cleanRows(projected, seen, 2, s.id);
     await insertClean(db, s.id, clean);
     await insertProblems(db, s.id, name, problems);
     const prev = toInfo(s).stats;
@@ -179,7 +179,16 @@ export const getReview = createServerFn({ method: "POST" })
       if (p) problems.push(...p);
       if (!p || p.length < 1000) break;
     }
-    return { info: toInfo(s), problems };
+    // Same definitions as the analysis pages: orders = unique order refs, order lines = stored rows.
+    const refs = new Set<string>();
+    let orderLines = 0;
+    for (let from = 0; ; from += 1000) {
+      const { data: r } = await db.from("rw_order_lines").select("order_ref").eq("session_id", s.id).order("id").range(from, from + 999);
+      r?.forEach((x) => refs.add(x.order_ref));
+      orderLines += r?.length ?? 0;
+      if (!r || r.length < 1000) break;
+    }
+    return { info: toInfo(s), problems, counts: { orders: refs.size, orderLines } };
   });
 
 export const confirmAnalysis = createServerFn({ method: "POST" })
@@ -201,7 +210,7 @@ export const getLines = createServerFn({ method: "POST" })
     const lines: Line[] = [];
     for (let from = 0; ; from += 1000) {
       const { data: rows } = await db.from("rw_order_lines")
-        .select("platform,product_id,product_name,category,order_date,price,quantity,discount,payment_type,returned,returned_qty,reason_category")
+        .select("order_ref,platform,product_id,product_name,category,order_date,price,quantity,discount,payment_type,returned,returned_qty,reason_category")
         .eq("session_id", s.id).order("id").range(from, from + 999);
       if (rows) lines.push(...rows.map((r) => ({ ...r, price: Number(r.price), discount: Number(r.discount) })));
       if (!rows || rows.length < 1000) break;

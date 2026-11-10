@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Logo } from "@/components/returnwise/AppShell";
+import { Logo, SessionChip } from "@/components/returnwise/AppShell";
 import { openSession, startSession } from "@/lib/returnwise/server.functions";
 import { setToken } from "@/lib/returnwise/client";
 
@@ -58,7 +58,10 @@ function Home() {
     <div className="min-h-screen bg-background">
       <section className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-6xl px-4 pb-16 pt-6">
-          <Logo />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Logo />
+            <SessionChip dark />
+          </div>
           <div className="mt-14 max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-widest opacity-70">For Amazon, Flipkart & Meesho sellers</p>
             <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Turn product returns into business insights.</h1>
