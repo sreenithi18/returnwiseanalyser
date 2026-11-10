@@ -4,6 +4,8 @@ import { AnalysisPage } from "@/components/returnwise/AnalysisPage";
 import { Card, StateMessage } from "@/components/returnwise/AppShell";
 import { groupRates, kpis, monthlyTrend, reasonCounts } from "@/lib/returnwise/analytics";
 import { inr, pct } from "@/lib/returnwise/client";
+import type { ReactNode } from "react";
+import { InfoTip, RATE_LABEL, RATE_TIP, ReturnRateLabel } from "@/components/returnwise/InfoTip";
 
 export const Route = createFileRoute("/dashboard")({
   ssr: false,
@@ -20,18 +22,20 @@ export const CHART_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)
 
 export function KpiGrid({ lines }: { lines: Parameters<typeof kpis>[0] }) {
   const k = kpis(lines);
-  const items: [string, string][] = [
-    ["Total sales (units)", k.unitsSold.toLocaleString("en-IN")],
-    ["Revenue (net)", inr(k.revenue)],
-    ["Orders", k.orders.toLocaleString("en-IN")],
-    ["Returned orders", k.returnedOrders.toLocaleString("en-IN")],
-    ["Return rate", pct(k.returnRate)],
-    ["Est. return loss", inr(k.returnLoss)],
+  const tip = (label: string, t: string) => <span className="inline-flex items-center gap-1">{label}<InfoTip tip={t} label={`${label}: ${t}`} /></span>;
+  const items: [string, ReactNode, string][] = [
+    ["units", "Total sales (units)", k.unitsSold.toLocaleString("en-IN")],
+    ["revenue", "Revenue (net)", inr(k.revenue)],
+    ["orders", tip("Orders", "Unique order IDs"), k.orders.toLocaleString("en-IN")],
+    ["lines", tip("Order lines", "One row per product in an order (valid rows after cleaning)"), k.orderLines.toLocaleString("en-IN")],
+    ["returnedOrders", tip("Returned orders", "Unique orders with at least one returned unit"), k.returnedOrders.toLocaleString("en-IN")],
+    ["rate", <ReturnRateLabel key="r" />, pct(k.returnRate)],
+    ["loss", tip("Est. return loss", "Net unit price × returned units"), inr(k.returnLoss)],
   ];
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-      {items.map(([l, v], i) => (
-        <div key={l} className={`rounded-xl border p-4 ${i === 5 ? "bg-navy text-navy-foreground" : "bg-card"}`}>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+      {items.map(([id, l, v]) => (
+        <div key={id} className={`rounded-xl border p-4 ${id === "loss" ? "bg-navy text-navy-foreground" : "bg-card"}`}>
           <div className="text-xs opacity-75">{l}</div>
           <div className="mt-1 font-display text-xl font-bold">{v}</div>
         </div>
@@ -79,24 +83,24 @@ function Dashboard({ lines, all }: { lines: Parameters<typeof kpis>[0]; all: Par
         </div>
       )}
       <Card>
-        <h2 className="font-semibold">Monthly return trend (all months)</h2>
+        <h2 className="flex items-center gap-1 font-semibold">Monthly {RATE_LABEL.toLowerCase()} trend (all months) <InfoTip tip={RATE_TIP} /></h2>
         <div className="mt-3 h-60"><ResponsiveContainer>
           <LineChart data={trend.map((t) => ({ ...t, rate: +(t.returnRate * 100).toFixed(1) }))}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="label" tick={{ fontSize: 12 }} /><YAxis unit="%" />
-            <Tooltip /><RLine type="monotone" dataKey="rate" name="Return rate %" stroke="var(--chart-1)" strokeWidth={2} />
+            <Tooltip /><RLine type="monotone" dataKey="rate" name={`${RATE_LABEL} %`} stroke="var(--chart-1)" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer></div>
       </Card>
       <div className="grid gap-5 lg:grid-cols-2">
-        {[["Return rate by category", cats], ["Return rate by platform", plats]].map(([title, data]) => (
+        {[[`${RATE_LABEL} by category`, cats], [`${RATE_LABEL} by platform`, plats]].map(([title, data]) => (
           <Card key={title as string}>
-            <h2 className="font-semibold">{title as string}</h2>
+            <h2 className="flex items-center gap-1 font-semibold">{title as string} <InfoTip tip={RATE_TIP} /></h2>
             <div className="mt-3 h-60"><ResponsiveContainer>
               <BarChart data={data as typeof cats}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} /><YAxis unit="%" />
-                <Tooltip /><Bar dataKey="rate" name="Return rate %" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+                <Tooltip /><Bar dataKey="rate" name={`${RATE_LABEL} %`} fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer></div>
           </Card>

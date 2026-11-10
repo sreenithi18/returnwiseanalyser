@@ -1,9 +1,10 @@
+import { fmtDateTime } from "./format";
 import { kpis, monthLabel, reasonCounts, recommendations, topProblematic, type Line } from "./analytics";
 
 const rs = (n: number) => "Rs " + Math.round(n).toLocaleString("en-IN");
 const pc = (n: number) => (n * 100).toFixed(1) + "%";
 
-export interface DQ { uploaded: number; valid: number; duplicates: number; rejected: number; flagged: number }
+export interface DQ { uploaded: number; valid: number; duplicates: number; rejected: number; flagged: number; orders: number; orderLines: number }
 
 export async function buildSummaryPdf(lines: Line[], month: string, dq: DQ, isDemo: boolean): Promise<{ base64: string; blob: Blob }> {
   const { jsPDF } = await import("jspdf");
@@ -18,15 +19,15 @@ export async function buildSummaryPdf(lines: Line[], month: string, dq: DQ, isDe
   doc.setFont("helvetica", "normal"); doc.setFontSize(10);
   doc.text("Turn product returns into business insights.", 40, 50);
   doc.text(`Monthly Summary - ${monthLabel(month)}`, W - 40, 32, { align: "right" });
-  doc.text(`Generated ${new Date().toLocaleString("en-IN")}`, W - 40, 50, { align: "right" });
+  doc.text(`Generated ${fmtDateTime(new Date())}`, W - 40, 50, { align: "right" });
   doc.setTextColor(30, 30, 40);
   let y = 92;
   if (isDemo) { doc.setFontSize(9); doc.setTextColor(150, 90, 0); doc.text("Synthetic demo data", 40, y); doc.setTextColor(30, 30, 40); y += 14; }
 
   const k = kpis(lines);
   autoTable(doc, {
-    startY: y, head: [["Units sold", "Revenue (net)", "Orders", "Returned orders", "Return rate", "Est. return loss"]],
-    body: [[k.unitsSold, rs(k.revenue), k.orders, k.returnedOrders, pc(k.returnRate), rs(k.returnLoss)]],
+    startY: y, head: [["Units sold", "Revenue (net)", "Orders", "Order lines", "Returned orders", "Return rate (units)", "Est. return loss"]],
+    body: [[k.unitsSold, rs(k.revenue), k.orders, k.orderLines, k.returnedOrders, pc(k.returnRate), rs(k.returnLoss)]],
     headStyles: { fillColor: navy }, styles: { fontSize: 9 },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,10 +48,12 @@ export async function buildSummaryPdf(lines: Line[], month: string, dq: DQ, isDe
 
   const top = topProblematic(lines).products;
   doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text("Top loss-causing products", 40, y);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(90, 90, 100);
+  doc.text("Return loss = net unit price × returned units", 40, y + 13); doc.setTextColor(30, 30, 40);
   autoTable(doc, {
-    startY: y + 6, head: [["Product", "SKU", "Units", "Returned", "Return rate", "Loss", "Primary reason"]],
-    body: top.length ? top.map((p) => [p.product_name, p.product_id, p.unitsSold, p.returnedUnits, pc(p.returnRate), rs(p.returnLoss), p.primaryReason ?? "-"]) : [["No product met the minimum order lines", "", "", "", "", "", ""]],
-    headStyles: { fillColor: navy }, styles: { fontSize: 9 },
+    startY: y + 20, head: [["Product (SKU)", "Orders", "Order lines", "Units", "Returned", "Return rate (units)", "Avg list price", "Avg net price (after discount)", "Return loss", "Primary reason"]],
+    body: top.length ? top.map((p) => [`${p.product_name}\n${p.product_id}`, p.orders, p.orderLines, p.unitsSold, p.returnedUnits, pc(p.returnRate), rs(p.avgPrice), rs(p.avgNetPrice), rs(p.returnLoss), p.primaryReason ?? "-"]) : [["No product met the minimum order lines", "", "", "", "", "", "", "", "", ""]],
+    headStyles: { fillColor: navy }, styles: { fontSize: 7.5 },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   y = (doc as any).lastAutoTable.finalY + 24;
@@ -66,14 +69,14 @@ export async function buildSummaryPdf(lines: Line[], month: string, dq: DQ, isDe
 
   doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text("Data quality", 40, y);
   autoTable(doc, {
-    startY: y + 6, head: [["Rows uploaded", "Valid", "Duplicates removed", "Rejected", "Flagged"]],
-    body: [[dq.uploaded, dq.valid, dq.duplicates, dq.rejected, dq.flagged]],
+    startY: y + 6, head: [["Rows uploaded", "Order lines (valid rows)", "Orders (unique order IDs)", "Duplicates removed", "Rejected", "Flagged"]],
+    body: [[dq.uploaded, dq.orderLines, dq.orders, dq.duplicates, dq.rejected, dq.flagged]],
     headStyles: { fillColor: navy }, styles: { fontSize: 9 },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   y = (doc as any).lastAutoTable.finalY + 18;
   doc.setFontSize(8); doc.setTextColor(110, 110, 120);
-  doc.text("Recent months may show lower return rates because returns can still arrive. Recommendations are suggestions; savings are not guaranteed.", 40, y, { maxWidth: W - 80 });
+  doc.text("Return rate (units) = returned units / units sold. Orders = unique order IDs; order lines = one row per product in an order. Recent months may show lower return rates because returns can still arrive. Recommendations are suggestions; savings are not guaranteed.", 40, y, { maxWidth: W - 80 });
 
   const blob = doc.output("blob");
   const base64 = (doc.output("datauristring") as string).split(",")[1] ?? "";

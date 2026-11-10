@@ -66,7 +66,7 @@ function Review() {
 
       <div className="mt-6 overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-sm">
-          <thead className="bg-muted text-left"><tr>{["File", "Uploaded", "Valid", "Duplicates", "Corrected", "Rejected", "Flagged"].map((h) => <th key={h} className="px-3 py-2 font-semibold">{h}</th>)}</tr></thead>
+          <thead className="bg-muted text-left"><tr>{["File", "Uploaded", "Valid (order lines)", "Duplicates", "Corrected", "Rejected", "Flagged"].map((h) => <th key={h} className="px-3 py-2 font-semibold">{h}</th>)}</tr></thead>
           <tbody>{files.map((f, i) => (
             <tr key={i} className="border-t"><td className="px-3 py-2 font-medium">{f.name}</td>
               {[f.uploaded, f.valid, f.duplicates, f.corrected, f.rejected, f.flagged].map((v, j) => <td key={j} className="px-3 py-2">{v}</td>)}</tr>
