@@ -31,3 +31,5 @@ use the editor.
 
 - ReturnWise: all data access goes through server functions in src/lib/returnwise/server.functions.ts using the admin client keyed by a hashed Session ID (no login; tables have RLS with no policies). Why: sessions are anonymous and each request must purge expired sessions first.
 - Cleaning, classification and analytics are pure modules in src/lib/returnwise/ shared by uploads and the demo; editable keywords/settings live in config.ts. Why: one code path, testable in src/test/returnwise.test.ts.
+- ReturnWise orders: "Orders" = unique order_ref, "Order lines" = stored rows; order_ref is a session-salted hash of platform+Order_ID made in cleanRows. Why: counts must match across review, dashboard, products and PDF without storing real order IDs.
+- ReturnWise date/time display goes through src/lib/returnwise/format.ts (UI and PDF). Why: one consistent date format everywhere.

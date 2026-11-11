@@ -3,6 +3,8 @@ import { classifyReason } from "@/lib/returnwise/classifier";
 import { cleanRows, mapHeaders, parseDate } from "@/lib/returnwise/cleaning";
 import { filterMonth, kpis, netUnitPrice, topProblematic, type Line } from "@/lib/returnwise/analytics";
 import { generateDemoRows } from "@/lib/returnwise/demo";
+import { deletionNotice, fmtDate, shortId } from "@/lib/returnwise/format";
+import { productStats } from "@/lib/returnwise/analytics";
 
 const base = { Platform: "amazon", Order_ID: "A1", Product_ID: "p1", Product_Name: " Kurti ", Product_Category: "Fashion", Order_Date: "05/10/2026", Price: 1000, Quantity: 2, Return_Status: "Returned", Returned_Quantity: 1, Discount_Applied: 10, Return_Reason: "size chota" };
 
@@ -50,4 +52,33 @@ describe("ReturnWise rules", () => {
     const { clean } = await cleanRows([base], new Set());
     expect(topProblematic(clean as unknown as Line[]).qualifyingCount).toBe(0);
   });
+  it("orders = unique order IDs, order lines = rows; returned orders counted once per order", async () => {
+    const { clean } = await cleanRows([base, { ...base, Product_ID: "p2" }, { ...base, Order_ID: "A2", Return_Status: "Delivered" }], new Set(), 2, "s1");
+    const k = kpis(clean as unknown as Line[]);
+    expect(k.orderLines).toBe(3);
+    expect(k.orders).toBe(2);
+    expect(k.returnedOrders).toBe(1);
+    expect(k.returnRate).toBeCloseTo(2 / 6);
+  });
+  it("same order across files gets the same reference within a session only", async () => {
+    const a = await cleanRows([base], new Set(), 2, "s1");
+    const b = await cleanRows([{ ...base, Product_ID: "p9" }], new Set(), 2, "s1");
+    const c = await cleanRows([base], new Set(), 2, "s2");
+    expect(a.clean[0]!.order_ref).toBe(b.clean[0]!.order_ref);
+    expect(a.clean[0]!.order_ref).not.toBe(c.clean[0]!.order_ref);
+    expect(a.clean[0]!.order_ref).not.toContain("A1");
+  });
+  it("avg net price applies discount to list price", async () => {
+    const { clean } = await cleanRows([base], new Set());
+    const p = productStats(clean as unknown as Line[])[0]!;
+    expect(p.avgPrice).toBe(1000);
+    expect(p.avgNetPrice).toBe(900);
+  });
+  it("dates read like 11 Nov 2026 with time and hours left", () => {
+    expect(fmtDate(new Date(2026, 8, 3))).toBe("3 Sep 2026");
+    const exp = new Date(2026, 10, 11, 15, 9);
+    const now = new Date(exp.getTime() - 23.5 * 3600_000);
+    expect(deletionNotice(exp, now)).toBe("Data will be deleted on 11 Nov 2026, 3:09 pm (23h left)");
+  });
+  it("shortens the Session ID for the header", () => expect(shortId("abcdefghijklmnopqrstuvwxyz")).toBe("abcdef…wxyz"));
 });
