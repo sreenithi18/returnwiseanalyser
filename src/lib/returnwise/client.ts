@@ -41,14 +41,14 @@ export function useLines() {
 export function useEndSession() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  return useCallback(async () => {
+  return useCallback(async (opts?: { demo?: boolean }) => {
     const token = getToken();
     if (token) {
       try { await endSession({ data: { token } }); } catch { /* already gone */ }
     }
     clearToken();
     qc.clear();
-    toast.success("Session ended. Your data has been deleted.");
+    toast.success(opts?.demo ? "Demo closed." : "Session ended. Your data has been deleted.");
     navigate({ to: "/" });
   }, [navigate, qc]);
 }

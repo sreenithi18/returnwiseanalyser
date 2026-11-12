@@ -1,12 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { AppShell, SimpleShell, StateMessage } from "./AppShell";
+import { AnalysisSkeleton, AppShell, SimpleShell, StateMessage } from "./AppShell";
+import { reasonColorMap } from "@/lib/returnwise/colors";
 import { isExpiredError, useLines, useMonth } from "@/lib/returnwise/client";
 import { filterMonth, monthsIn, type Line } from "@/lib/returnwise/analytics";
 import type { SessionInfo } from "@/lib/returnwise/server.functions";
 
-export interface AnalysisCtx { all: Line[]; lines: Line[]; month: string; info: SessionInfo; months: string[] }
+export interface AnalysisCtx { all: Line[]; lines: Line[]; month: string; info: SessionInfo; months: string[]; colors: Record<string, string> }
 
 /** Loads session data and renders the shell; children get month-filtered lines. */
 export function AnalysisPage({ children }: { children: (ctx: AnalysisCtx) => ReactNode }) {
@@ -14,7 +15,7 @@ export function AnalysisPage({ children }: { children: (ctx: AnalysisCtx) => Rea
   const [month, setMonth] = useMonth();
   const home = <Button asChild><Link to="/">Go to home</Link></Button>;
 
-  if (!ready || (token && isLoading)) return <div className="p-10 text-center text-muted-foreground">Loading analysis…</div>;
+  if (!ready || (token && isLoading)) return <AnalysisSkeleton />;
   if (!token) return <SimpleShell><StateMessage title="No active session" body="Start a new analysis, reopen one with your Session ID, or try the demo." action={home} /></SimpleShell>;
   if (error) return <SimpleShell><StateMessage title={isExpiredError(error) ? "Session expired, please start a new analysis." : "Something went wrong"} body={isExpiredError(error) ? "Sessions and their data are deleted 24 hours after creation." : error.message} action={home} /></SimpleShell>;
   if (!data) return null;
@@ -27,7 +28,7 @@ export function AnalysisPage({ children }: { children: (ctx: AnalysisCtx) => Rea
     <AppShell months={months} month={m} onMonth={setMonth} isDemo={data.info.isDemo} expiresAt={data.info.expiresAt}>
       {lines.length === 0
         ? <StateMessage title="No orders in this month" body="Pick another month from the dropdown." />
-        : children({ all: data.lines, lines, month: m, info: data.info, months })}
+        : children({ all: data.lines, lines, month: m, info: data.info, months, colors: reasonColorMap(data.lines) })}
     </AppShell>
   );
 }
