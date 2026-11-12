@@ -24,7 +24,7 @@ export const Route = createFileRoute("/summary")({
   component: () => <AnalysisPage>{(c) => <Summary {...c} />}</AnalysisPage>,
 });
 
-function Summary({ lines, all, month, info }: AnalysisCtx) {
+function Summary({ lines, all, month, info, colors }: AnalysisCtx) {
   const [link, setLink] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const allK = kpis(all);
@@ -87,7 +87,7 @@ function Summary({ lines, all, month, info }: AnalysisCtx) {
           {reasonCounts(lines).slice(0, 5).map((r) => <li key={r.reason}>{r.reason} — {r.count} units</li>)}
         </ol>
       </Card>
-      <section><h2 className="text-lg font-semibold">Top 3 loss-causing products</h2><p className="mb-3 mt-1 text-sm text-muted-foreground">{LOSS_FORMULA}</p><TopProductCards lines={lines} /></section>
+      <section><h2 className="text-lg font-semibold">Top 3 loss-causing products</h2><p className="mb-3 mt-1 text-sm text-muted-foreground">{LOSS_FORMULA}</p><TopProductCards lines={lines} colors={colors} /></section>
       <RecList lines={lines} />
       <Card>
         <h2 className="font-semibold">Data quality</h2>
