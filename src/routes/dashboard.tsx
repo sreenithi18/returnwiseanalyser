@@ -63,7 +63,7 @@ export function KpiGrid({ lines }: { lines: Line[] }) {
   );
 }
 
-type TrendPoint = { label: string; rate: number; solid: number | null; recent: number | null; latest: boolean };
+type TrendPoint = { label: string; rate: number; solid: number | null; recent: number | null; recentLabel: number | null; latest: boolean };
 function TrendTooltip({ active, payload }: { active?: boolean; payload?: { payload: TrendPoint }[] }) {
   if (!active || !payload?.length) return null;
   const p = payload[0]!.payload;
@@ -84,7 +84,7 @@ function Dashboard({ lines, all, colors }: AnalysisCtx) {
   const last = trendRaw.length - 1;
   const trend: TrendPoint[] = trendRaw.map((t, i) => {
     const rate = +(t.returnRate * 100).toFixed(1);
-    return { label: t.label, rate, latest: i === last && last > 0, solid: i < last || last === 0 ? rate : null, recent: last > 0 && i >= last - 1 ? rate : null };
+    return { label: t.label, rate, latest: i === last && last > 0, solid: i < last || last === 0 ? rate : null, recent: last > 0 && i >= last - 1 ? rate : null, recentLabel: last > 0 && i === last ? rate : null };
   });
   const cats = groupRates(lines, "category").map((c) => ({ ...c, rate: +(c.returnRate * 100).toFixed(1) }));
   const plats = groupRates(lines, "platform").map((c) => ({ ...c, rate: +(c.returnRate * 100).toFixed(1) }));
@@ -150,7 +150,7 @@ function Dashboard({ lines, all, colors }: AnalysisCtx) {
               <LabelList dataKey="solid" position="top" formatter={(v: unknown) => (v == null ? "" : `${v}%`)} style={{ fontSize: 12, fill: "var(--foreground)" }} />
             </RLine>
             <RLine type="linear" dataKey="recent" stroke="var(--chart-1)" strokeWidth={2.5} strokeDasharray="6 5" dot={{ r: 4, strokeDasharray: "0" }} connectNulls={false} isAnimationActive={false}>
-              <LabelList dataKey="recent" position="top" formatter={(v: unknown) => (v == null ? "" : `${v}%`)} content={undefined} />
+              <LabelList dataKey="recentLabel" position="top" formatter={(v: unknown) => (v == null ? "" : `${v}%`)} style={{ fontSize: 12, fill: "var(--foreground)" }} />
             </RLine>
           </LineChart>
         </ResponsiveContainer></div>

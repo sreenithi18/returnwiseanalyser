@@ -16,3 +16,8 @@ export function reasonColorMap(allLines: Line[]): Record<string, string> {
 }
 export const colorFor = (map: Record<string, string>, reason: string | null | undefined) =>
   (reason && map[reason]) || NEUTRAL_COLOR;
+
+export type RateTone = "good" | "warn" | "bad";
+/** Return rate colour: green below 10%, amber 10–20%, red above 20%. */
+export const rateTone = (rate: number): RateTone => (rate < 0.1 ? "good" : rate <= 0.2 ? "warn" : "bad");
+export const RATE_TONE_CLASS: Record<RateTone, string> = { good: "text-good-text", warn: "text-warn-text", bad: "text-bad-text" };
