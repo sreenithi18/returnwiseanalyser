@@ -128,10 +128,16 @@ export function productStats(lines: Line[], minLines = MIN_ORDER_LINES_FOR_PROBL
   return out.sort((a, b) => b.returnLoss - a.returnLoss || b.returnRate - a.returnRate);
 }
 
-/** Top problematic products: ranked by return loss, only those meeting the minimum order-line rule and with returns. */
+/**
+ * Top problematic products, ranked by return loss. Qualifying = at least `minLines` order lines
+ * (ALL lines of the product, returned or not) and some returns. If none qualify, the top products
+ * by loss are still returned with `lowSample: true` so the page is never empty when data exists.
+ */
 export function topProblematic(lines: Line[], n = 3, minLines = MIN_ORDER_LINES_FOR_PROBLEMATIC) {
-  const qualifying = productStats(lines, minLines).filter((p) => p.qualifies && p.returnedUnits > 0);
-  return { products: qualifying.slice(0, n), qualifyingCount: qualifying.length };
+  const withReturns = productStats(lines, minLines).filter((p) => p.returnedUnits > 0);
+  const qualifying = withReturns.filter((p) => p.qualifies);
+  const lowSample = qualifying.length === 0;
+  return { products: (lowSample ? withReturns : qualifying).slice(0, n), qualifyingCount: qualifying.length, lowSample };
 }
 
 export function groupRates(lines: Line[], key: "category" | "platform") {

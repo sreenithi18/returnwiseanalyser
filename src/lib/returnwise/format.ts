@@ -22,3 +22,13 @@ export const deletionNotice = (expires: Date, now: Date) =>
 
 /** Shortened Session ID for display, e.g. "3fK9aB…x7Qw". */
 export const shortId = (t: string) => (t.length > 12 ? `${t.slice(0, 6)}…${t.slice(-4)}` : t);
+
+/** Short Indian-style amount, e.g. 573557 -> "₹5.7L", 12500000 -> "₹1.3Cr", 45300 -> "₹45.3K". */
+export function inrShort(n: number, symbol = "₹"): string {
+  const a = Math.abs(n), sign = n < 0 ? "-" : "";
+  const fmt = (v: number) => (v >= 100 ? Math.round(v).toString() : v.toFixed(1).replace(/\.0$/, ""));
+  if (a >= 1e7) return `${sign}${symbol}${fmt(a / 1e7)}Cr`;
+  if (a >= 1e5) return `${sign}${symbol}${fmt(a / 1e5)}L`;
+  if (a >= 1e3) return `${sign}${symbol}${fmt(a / 1e3)}K`;
+  return `${sign}${symbol}${Math.round(a)}`;
+}
