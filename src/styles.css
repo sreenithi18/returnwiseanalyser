@@ -62,13 +62,23 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-neutral: var(--chart-neutral);
+  --color-primary-soft: var(--primary-soft);
+  --color-teal: var(--teal);
+  --color-teal-foreground: var(--teal-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-success-foreground: var(--success-foreground);
+  --color-good-text: var(--good-text);
+  --color-warn-text: var(--warn-text);
+  --color-bad-text: var(--bad-text);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-success: var(--success);
   --color-navy: var(--navy);
   --color-navy-foreground: var(--navy-foreground);
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -80,48 +90,81 @@
 }
 
 :root {
-  --radius: 0.6rem;
-  --background: oklch(0.985 0.006 85);
-  --foreground: oklch(0.22 0.05 268);
+  /* ReturnWise tokens: bg #FAF9F6, border #E8E6E0, primary #2B3A9E, navy #0E1A3D, accent #0891B2,
+     red #C84B4B, amber #D99A29, green #2E9B6F. Cards: white, 1px border, 12px radius (rounded-xl). */
+  --radius: 0.5rem;
+  --background: oklch(0.982 0.004 91.4);
+  --foreground: oklch(0.23 0.069 266.7);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.05 268);
+  --card-foreground: oklch(0.23 0.069 266.7);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.05 268);
-  --primary: oklch(0.36 0.14 270);
-  --primary-foreground: oklch(0.985 0.006 85);
-  --secondary: oklch(0.95 0.015 270);
-  --secondary-foreground: oklch(0.26 0.08 270);
-  --muted: oklch(0.955 0.008 85);
-  --muted-foreground: oklch(0.48 0.03 268);
-  --accent: oklch(0.93 0.03 270);
-  --accent-foreground: oklch(0.26 0.1 270);
-  --destructive: oklch(0.55 0.2 27);
-  --destructive-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.9 0.08 85);
-  --warning-foreground: oklch(0.38 0.08 60);
-  --success: oklch(0.55 0.12 160);
-  --navy: oklch(0.22 0.07 268);
-  --navy-foreground: oklch(0.97 0.01 85);
-  --border: oklch(0.9 0.012 270);
-  --input: oklch(0.88 0.015 270);
-  --ring: oklch(0.5 0.15 270);
-  --chart-1: oklch(0.42 0.16 270);
-  --chart-2: oklch(0.62 0.13 230);
-  --chart-3: oklch(0.72 0.14 75);
-  --chart-4: oklch(0.6 0.15 25);
-  --chart-5: oklch(0.6 0.11 165);
-  --chart-6: oklch(0.55 0.05 268);
-  --chart-7: oklch(0.7 0.1 320);
-  --chart-8: oklch(0.8 0.02 268);
-  --sidebar: oklch(0.22 0.07 268);
-  --sidebar-foreground: oklch(0.97 0.01 85);
-  --sidebar-primary: oklch(0.36 0.14 270);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.3 0.08 268);
-  --sidebar-accent-foreground: oklch(0.97 0.01 85);
+  --popover-foreground: oklch(0.23 0.069 266.7);
+  --primary: oklch(0.403 0.162 270.6);
+  --primary-foreground: oklch(0.99 0.003 91);
+  --primary-soft: oklch(0.95 0.03 272);
+  --secondary: oklch(0.955 0.02 272);
+  --secondary-foreground: oklch(0.3 0.12 270);
+  --muted: oklch(0.96 0.005 91);
+  --muted-foreground: oklch(0.47 0.03 266);
+  --accent: oklch(0.955 0.025 221);
+  --accent-foreground: oklch(0.38 0.08 221);
+  --teal: oklch(0.609 0.111 221.7);
+  --teal-foreground: oklch(0.99 0.003 91);
+  --destructive: oklch(0.582 0.16 23.5);
+  --destructive-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.73 0.141 76.6);
+  --warning-foreground: oklch(0.3 0.07 60);
+  --warning-soft: oklch(0.95 0.05 80);
+  --success: oklch(0.617 0.119 162);
+  --success-foreground: oklch(0.99 0 0);
+  /* Text-safe (AA on white) versions for coloured figures. */
+  --good-text: oklch(0.5 0.11 162);
+  --warn-text: oklch(0.55 0.12 66);
+  --bad-text: oklch(0.54 0.16 23.5);
+  --navy: oklch(0.23 0.069 266.7);
+  --navy-foreground: oklch(0.97 0.006 91);
+  --border: oklch(0.925 0.008 91.5);
+  --input: oklch(0.9 0.01 91);
+  --ring: oklch(0.403 0.162 270.6);
+  /* One fixed colour per return reason theme (assigned by rank, see colors.ts). */
+  --chart-1: oklch(0.403 0.162 270.6);
+  --chart-2: oklch(0.609 0.111 221.7);
+  --chart-3: oklch(0.73 0.141 76.6);
+  --chart-4: oklch(0.582 0.16 23.5);
+  --chart-5: oklch(0.617 0.119 162);
+  --chart-6: oklch(0.55 0.15 310);
+  --chart-7: oklch(0.65 0.13 350);
+  --chart-8: oklch(0.55 0.09 120);
+  --chart-9: oklch(0.6 0.1 40);
+  --chart-10: oklch(0.5 0.06 250);
+  --chart-neutral: oklch(0.75 0.01 91);
+  --chart-grid: oklch(0.925 0.008 91.5);
+  --gradient-lead: linear-gradient(135deg, oklch(0.403 0.162 270.6), oklch(0.47 0.16 275));
+  --gradient-hero: radial-gradient(1200px 500px at 85% 10%, oklch(0.32 0.12 270 / 0.9), transparent 60%), oklch(0.23 0.069 266.7);
+  --shadow-card: 0 1px 2px oklch(0.23 0.069 266.7 / 0.04), 0 2px 8px oklch(0.23 0.069 266.7 / 0.04);
+  --shadow-preview: 0 30px 60px -20px oklch(0.1 0.05 266 / 0.55), 0 12px 24px -12px oklch(0.1 0.05 266 / 0.35);
+  --sidebar: oklch(0.23 0.069 266.7);
+  --sidebar-foreground: oklch(0.97 0.006 91);
+  --sidebar-primary: oklch(0.403 0.162 270.6);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.31 0.08 268);
+  --sidebar-accent-foreground: oklch(0.97 0.006 91);
   --sidebar-border: oklch(0.32 0.06 268);
-  --sidebar-ring: oklch(0.5 0.15 270);
+  --sidebar-ring: oklch(0.6 0.12 270);
 }
+
+@keyframes rw-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@utility animate-fade-in {
+  animation: rw-fade-in 200ms ease-out both;
+  @media (prefers-reduced-motion: reduce) { animation: none; }
+}
+@utility shadow-card { box-shadow: var(--shadow-card); }
+@utility shadow-preview { box-shadow: var(--shadow-preview); }
+@utility bg-gradient-lead { background-image: var(--gradient-lead); }
+@utility bg-gradient-hero { background: var(--gradient-hero); }
 
 @layer base {
   * {
@@ -136,5 +179,6 @@
 
 @layer base {
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  .tabular { font-variant-numeric: tabular-nums; }
   body { font-family: var(--font-sans); }
 }
