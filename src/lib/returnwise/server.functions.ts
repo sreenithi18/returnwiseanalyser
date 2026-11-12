@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { cleanRows, mapHeaders, projectRow, sha256, type CleanStats, type Problem } from "./cleaning";
+import { cleanRows, mapHeaders, projectRow, REQUIRED_COLUMNS, sha256, type CleanStats, type Problem } from "./cleaning";
 import { MAX_FILE_BYTES, MAX_FILES_PER_SESSION } from "./config";
 import { generateDemoRows } from "./demo";
 import type { Line } from "./analytics";
@@ -102,7 +102,7 @@ function looksLikeXlsx(bytes: Uint8Array): boolean {
 
 export type UploadResult =
   | { ok: true; name: string; stats: CleanStats }
-  | { ok: false; name: string; error: string; missing?: string[] };
+  | { ok: false; name: string; error: string; missing?: string[]; templateMismatch?: boolean };
 
 export const uploadFile = createServerFn({ method: "POST" })
   .validator((i: { token: string; fileName: string; base64: string; consent: boolean }) => {
@@ -144,6 +144,7 @@ export const uploadFile = createServerFn({ method: "POST" })
       return { ok: false, name, error: "Upload failed: the workbook could not be opened." };
     }
     const { map, missing } = mapHeaders(headers);
+    if (missing.length === REQUIRED_COLUMNS.length) return { ok: false, name, error: "This file doesn't match the ReturnWise template.", missing, templateMismatch: true };
     if (missing.length) return { ok: false, name, error: `Missing required column(s): ${missing.join(", ")}. This file was not processed.`, missing };
     // Drop all non-standard columns before anything is saved.
     const projected = rows.map((r) => projectRow(r, map));

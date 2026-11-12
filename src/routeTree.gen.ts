@@ -14,7 +14,6 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as ReviewRouteImport } from './routes/review'
-import { Route as SessionRouteImport } from './routes/session'
 import { Route as SummaryRouteImport } from './routes/summary'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as ApiPublicReportTokenRouteImport } from './routes/api/public/report.$token'
@@ -44,11 +43,6 @@ const ReviewRoute = ReviewRouteImport.update({
   path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SessionRoute = SessionRouteImport.update({
-  id: '/session',
-  path: '/session',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SummaryRoute = SummaryRouteImport.update({
   id: '/summary',
   path: '/summary',
@@ -71,7 +65,6 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/recommendations': typeof RecommendationsRoute
   '/review': typeof ReviewRoute
-  '/session': typeof SessionRoute
   '/summary': typeof SummaryRoute
   '/upload': typeof UploadRoute
   '/api/public/report/$token': typeof ApiPublicReportTokenRoute
@@ -82,7 +75,6 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/recommendations': typeof RecommendationsRoute
   '/review': typeof ReviewRoute
-  '/session': typeof SessionRoute
   '/summary': typeof SummaryRoute
   '/upload': typeof UploadRoute
   '/api/public/report/$token': typeof ApiPublicReportTokenRoute
@@ -94,7 +86,6 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/recommendations': typeof RecommendationsRoute
   '/review': typeof ReviewRoute
-  '/session': typeof SessionRoute
   '/summary': typeof SummaryRoute
   '/upload': typeof UploadRoute
   '/api/public/report/$token': typeof ApiPublicReportTokenRoute
@@ -107,7 +98,6 @@ export interface FileRouteTypes {
     | '/products'
     | '/recommendations'
     | '/review'
-    | '/session'
     | '/summary'
     | '/upload'
     | '/api/public/report/$token'
@@ -118,7 +108,6 @@ export interface FileRouteTypes {
     | '/products'
     | '/recommendations'
     | '/review'
-    | '/session'
     | '/summary'
     | '/upload'
     | '/api/public/report/$token'
@@ -129,7 +118,6 @@ export interface FileRouteTypes {
     | '/products'
     | '/recommendations'
     | '/review'
-    | '/session'
     | '/summary'
     | '/upload'
     | '/api/public/report/$token'
@@ -141,7 +129,6 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   RecommendationsRoute: typeof RecommendationsRoute
   ReviewRoute: typeof ReviewRoute
-  SessionRoute: typeof SessionRoute
   SummaryRoute: typeof SummaryRoute
   UploadRoute: typeof UploadRoute
   ApiPublicReportTokenRoute: typeof ApiPublicReportTokenRoute
@@ -184,13 +171,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/session': {
-      id: '/session'
-      path: '/session'
-      fullPath: '/session'
-      preLoaderRoute: typeof SessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/summary': {
       id: '/summary'
       path: '/summary'
@@ -221,7 +201,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   RecommendationsRoute: RecommendationsRoute,
   ReviewRoute: ReviewRoute,
-  SessionRoute: SessionRoute,
   SummaryRoute: SummaryRoute,
   UploadRoute: UploadRoute,
   ApiPublicReportTokenRoute: ApiPublicReportTokenRoute,

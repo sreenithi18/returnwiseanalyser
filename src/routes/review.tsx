@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { SimpleShell, StateMessage } from "@/components/returnwise/AppShell";
+import { SimpleShell, StateMessage, Stepper } from "@/components/returnwise/AppShell";
+import { Skeleton } from "@/components/ui/skeleton";
 import { confirmAnalysis, getReview } from "@/lib/returnwise/server.functions";
 import { isExpiredError, useToken } from "@/lib/returnwise/client";
 import { downloadProblems } from "@/lib/returnwise/excel-client";
@@ -26,7 +27,7 @@ function Review() {
   const [busy, setBusy] = useState(false);
   const q = useQuery({ queryKey: ["review", token], queryFn: () => getReview({ data: { token: token! } }), enabled: !!token, retry: false });
 
-  if (!ready || q.isLoading) return null;
+  if (!ready || (token && q.isLoading)) return <SimpleShell><Skeleton className="h-10 w-72" /><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div></SimpleShell>;
   if (!token || q.error) return <SimpleShell><StateMessage title={!token || isExpiredError(q.error) ? "Session expired, please start a new analysis." : "Could not load the review"} action={<Button asChild><Link to="/">Go to home</Link></Button>} /></SimpleShell>;
   const { info, problems, counts } = q.data!;
   const files = info.stats.files;
@@ -53,18 +54,19 @@ function Review() {
   ];
   return (
     <SimpleShell>
+      <Stepper current={1} />
       <h1 className="text-2xl font-bold">Cleaning Review</h1>
       <p className="mt-1 text-sm text-muted-foreground">Check what happened to your data before we analyse it.</p>
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {tiles.map(([l, v]) => (
-          <div key={l} className="rounded-xl border bg-card p-4">
+          <div key={l} className="rounded-xl border bg-card p-4 shadow-card">
             <div className="text-xs text-muted-foreground">{l}</div>
-            <div className="mt-1 font-display text-2xl font-bold">{v.toLocaleString("en-IN")}</div>
+            <div className="mt-1 text-2xl font-bold tabular">{v.toLocaleString("en-IN")}</div>
           </div>
         ))}
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-xl border bg-card">
+      <div className="mt-6 overflow-x-auto rounded-xl border bg-card shadow-card">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left"><tr>{["File", "Uploaded", "Valid (order lines)", "Duplicates", "Corrected", "Rejected", "Flagged"].map((h) => <th key={h} className="px-3 py-2 font-semibold">{h}</th>)}</tr></thead>
           <tbody>{files.map((f, i) => (
@@ -74,7 +76,7 @@ function Review() {
         </table>
       </div>
 
-      <div className="mt-6 rounded-xl border bg-card p-5">
+      <div className="mt-6 rounded-xl border bg-card p-5 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold">Rejected and flagged rows ({problems.length})</h2>
           <Button variant="outline" size="sm" disabled={!problems.length} onClick={() => downloadProblems(problems)}>Download list (.xlsx)</Button>
@@ -83,7 +85,7 @@ function Review() {
           <ul className="mt-3 max-h-72 space-y-1 overflow-y-auto text-sm">
             {problems.slice(0, 200).map((p, i) => (
               <li key={i} className="flex gap-2 border-t py-1.5">
-                <span className={`shrink-0 rounded px-2 text-xs font-semibold leading-5 ${p.kind === "rejected" ? "bg-destructive/10 text-destructive" : "bg-warning text-warning-foreground"}`}>{p.kind === "rejected" ? "Rejected" : "Flagged"}</span>
+                <span className={`shrink-0 rounded px-2 text-xs font-semibold leading-5 ${p.kind === "rejected" ? "bg-destructive/10 text-destructive" : "bg-warning-soft text-warning-foreground"}`}>{p.kind === "rejected" ? "Rejected" : "Flagged"}</span>
                 <span className="text-muted-foreground">{p.file_name} · row {p.row_number}:</span> <span>{p.reason}</span>
               </li>
             ))}
