@@ -125,8 +125,8 @@ function Products({ lines, colors }: { lines: Line[]; colors: Record<string, str
     <div className="space-y-6">
       <section>
         <h1 className="text-2xl font-bold">Products</h1>
-        <h2 className="mt-4 text-lg font-semibold">Top problematic products</h2>
-        <p className="mb-3 mt-1 text-sm text-muted-foreground">{LOSS_FORMULA}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{LOSS_FORMULA}</p>
+        <h2 className="mb-3 mt-6 text-lg font-semibold">Top problematic products</h2>
         {stats.length === 1 && <p className="mb-3 text-sm text-muted-foreground">Your data contains only one product.</p>}
         <TopProductCards lines={lines} colors={colors} />
       </section>
