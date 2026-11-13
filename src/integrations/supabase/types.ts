@@ -94,6 +94,44 @@ export type Database = {
           },
         ]
       }
+      rw_reason_cache: {
+        Row: {
+          confidence: string
+          created_at: string
+          id: number
+          issue_label: string
+          reason_key: string
+          session_id: string
+          theme: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          id?: number
+          issue_label: string
+          reason_key: string
+          session_id: string
+          theme: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          id?: number
+          issue_label?: string
+          reason_key?: string
+          session_id?: string
+          theme?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rw_reason_cache_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "rw_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rw_rejected_rows: {
         Row: {
           file_name: string
