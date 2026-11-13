@@ -59,7 +59,7 @@ export function SessionChip({ dark = false }: { dark?: boolean }) {
 function DeletionNotice({ expiresAt }: { expiresAt: string }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(t); }, []);
-  return <span className="hidden text-xs text-muted-foreground xl:inline">{deletionNotice(new Date(expiresAt), now)}</span>;
+  return <span className="hidden text-xs text-muted-foreground 2xl:inline">{deletionNotice(new Date(expiresAt), now)}</span>;
 }
 
 export function EndSessionButton({ variant = "outline" as const }: { variant?: "outline" | "destructive" }) {
