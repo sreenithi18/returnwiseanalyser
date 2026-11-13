@@ -1,5 +1,4 @@
-import { classifyReason } from "./classifier";
-import { PLATFORM_ALIASES, type ReasonCategory } from "./config";
+import { PLATFORM_ALIASES } from "./config";
 
 export const STANDARD_COLUMNS = [
   "Platform", "Order_ID", "Product_ID", "Product_Name", "Product_Category", "Order_Date",
@@ -30,7 +29,8 @@ export interface CleanRow {
   return_date: string | null;
   returned_qty: number;
   return_reason: string | null;
-  reason_category: ReasonCategory | null;
+  /** Deprecated: themes now come from the AI classification cache. Always null. */
+  reason_category: string | null;
   city: string | null;
   flag: string | null;
 }
@@ -250,7 +250,7 @@ export async function cleanRows(
       return_date: returnDate,
       returned_qty: returnedQty,
       return_reason: reason,
-      reason_category: returned ? classifyReason(reason, category) : null,
+      reason_category: null,
       city: str(r.City) || null,
       flag: flags.length ? flags.join("; ") : null,
     });

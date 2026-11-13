@@ -8,6 +8,7 @@ export function PrivacyNotice() {
       <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
         <li>Your data is used only to produce this analysis.</li>
         <li>Columns like customer names, phone, email or address are dropped on upload, before anything is saved. Order IDs are replaced with app references.</li>
+        <li>Return reason text is processed by an AI service. No customer details or order references are sent.</li>
         <li>Everything is kept for 24 hours, then deleted automatically. You can delete it sooner at any time.</li>
       </ul>
     </div>

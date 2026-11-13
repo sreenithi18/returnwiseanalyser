@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SimpleShell, StateMessage, Stepper } from "@/components/returnwise/AppShell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { confirmAnalysis, getReview } from "@/lib/returnwise/server.functions";
-import { isExpiredError, useToken } from "@/lib/returnwise/client";
+import { clearToken, isExpiredError, useToken } from "@/lib/returnwise/client";
 import { downloadProblems } from "@/lib/returnwise/excel-client";
 
 export const Route = createFileRoute("/review")({
@@ -27,6 +27,8 @@ function Review() {
   const [busy, setBusy] = useState(false);
   const q = useQuery({ queryKey: ["review", token], queryFn: () => getReview({ data: { token: token! } }), enabled: !!token, retry: false });
 
+  const expired = isExpiredError(q.error);
+  useEffect(() => { if (expired) clearToken(); }, [expired]);
   if (!ready || (token && q.isLoading)) return <SimpleShell><Skeleton className="h-10 w-72" /><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div></SimpleShell>;
   if (!token || q.error) return <SimpleShell><StateMessage title={!token || isExpiredError(q.error) ? "Session expired, please start a new analysis." : "Could not load the review"} action={<Button asChild><Link to="/">Go to home</Link></Button>} /></SimpleShell>;
   const { info, problems, counts } = q.data!;
@@ -41,7 +43,8 @@ function Review() {
   async function confirm() {
     setBusy(true);
     try {
-      await confirmAnalysis({ data: { token: token! } });
+      const r = await confirmAnalysis({ data: { token: token! } });
+      if (!r.aiOk) toast.warning("AI classification is unavailable. Showing unclassified reasons.");
       qc.invalidateQueries();
       navigate({ to: "/dashboard" });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Could not continue"); }
@@ -97,7 +100,7 @@ function Review() {
       {t.valid === 0 && <p role="alert" className="mt-4 text-sm text-destructive">No valid rows yet. Fix the file and upload again.</p>}
       <div className="mt-6 flex flex-wrap justify-between gap-3">
         <Button asChild variant="outline"><Link to="/upload">Upload another file</Link></Button>
-        <Button size="lg" onClick={confirm} disabled={busy || t.valid === 0}>{busy ? "Preparing…" : "Confirm and analyse"}</Button>
+        <Button size="lg" onClick={confirm} disabled={busy || t.valid === 0}>{busy ? "Analysing return reasons…" : "Confirm and analyse"}</Button>
       </div>
     </SimpleShell>
   );

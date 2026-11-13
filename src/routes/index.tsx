@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, FileDown, FileSpreadsheet, ListChecks, MessageSquareText, ShieldCheck, Target, TrendingDown, Zap } from "lucide-react";
+import { ArrowRight, FileDown, FileSpreadsheet, ListChecks, MessageSquareText, ShieldCheck, CheckCircle2, TrendingDown, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -150,9 +150,9 @@ function Home() {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 md:flex-row md:items-center md:px-8">
           <span className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-5 w-5 text-success" /> Private by design</span>
           <ul className="grid flex-1 gap-2 text-sm text-muted-foreground sm:grid-cols-3">
-            <li className="flex items-center gap-2"><Target className="h-4 w-4 shrink-0 text-primary" /> No login. Your data is used only for your analysis.</li>
-            <li className="flex items-center gap-2"><Target className="h-4 w-4 shrink-0 text-primary" /> Names, phones and addresses are dropped before saving.</li>
-            <li className="flex items-center gap-2"><Target className="h-4 w-4 shrink-0 text-primary" /> Everything is deleted automatically after 24 hours.</li>
+            <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-success" /> No login. Your data is used only for your analysis.</li>
+            <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-success" /> Names, phones and addresses are dropped before saving. Only return reason text goes to AI.</li>
+            <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-success" /> Everything is deleted automatically after 24 hours.</li>
           </ul>
         </div>
       </section>

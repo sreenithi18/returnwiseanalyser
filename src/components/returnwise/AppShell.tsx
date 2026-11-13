@@ -59,7 +59,7 @@ export function SessionChip({ dark = false }: { dark?: boolean }) {
 function DeletionNotice({ expiresAt }: { expiresAt: string }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(t); }, []);
-  return <span className="hidden text-xs text-muted-foreground xl:inline">{deletionNotice(new Date(expiresAt), now)}</span>;
+  return <span className="hidden text-xs text-muted-foreground 2xl:inline">{deletionNotice(new Date(expiresAt), now)}</span>;
 }
 
 export function EndSessionButton({ variant = "outline" as const }: { variant?: "outline" | "destructive" }) {
@@ -99,13 +99,13 @@ export function ExitDemoButton() {
   );
 }
 
-function SessionActions({ isDemo }: { isDemo?: boolean }) {
+function SessionActions({ isDemo }: { isDemo?: boolean | undefined }) {
   const { token } = useToken();
   if (!token) return null;
   return isDemo ? <ExitDemoButton /> : <EndSessionButton />;
 }
 
-export function SimpleShell({ children, isDemo }: { children: ReactNode; isDemo?: boolean }) {
+export function SimpleShell({ children, isDemo }: { children: ReactNode; isDemo?: boolean | undefined }) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur">
@@ -113,7 +113,7 @@ export function SimpleShell({ children, isDemo }: { children: ReactNode; isDemo?
           <Logo />
           <div className="flex flex-wrap items-center gap-2">
             <SessionChip />
-            <SessionActions isDemo={isDemo} />
+            <SessionActions isDemo={!!isDemo} />
           </div>
         </div>
       </header>
@@ -181,7 +181,7 @@ export function AppShell({
             <div className="ml-auto flex flex-wrap items-center gap-2">
               {expiresAt && <DeletionNotice expiresAt={expiresAt} />}
               <SessionChip />
-              <SessionActions isDemo={isDemo} />
+              <SessionActions isDemo={!!isDemo} />
             </div>
           </div>
         </header>

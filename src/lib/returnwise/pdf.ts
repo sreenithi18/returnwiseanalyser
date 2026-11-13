@@ -46,13 +46,14 @@ export async function buildSummaryPdf(lines: Line[], month: string, dq: DQ, isDe
   if (!reasons.length) { doc.text("No returns in this period.", 40, y + 9); y += 18; }
   y += 10;
 
-  const top = topProblematic(lines).products;
+  const tp = topProblematic(lines);
+  const top = tp.products;
   doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text("Top loss-causing products", 40, y);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(90, 90, 100);
-  doc.text("Return loss = net unit price × returned units", 40, y + 13); doc.setTextColor(30, 30, 40);
+  doc.text("Return loss = net unit price × returned units" + (tp.lowSample ? "   |   Low sample (under 20 order lines): results may not be reliable." : ""), 40, y + 13); doc.setTextColor(30, 30, 40);
   autoTable(doc, {
     startY: y + 20, head: [["Product (SKU)", "Orders", "Order lines", "Units", "Returned", "Return rate (units)", "Avg list price", "Avg net price (after discount)", "Return loss", "Primary reason"]],
-    body: top.length ? top.map((p) => [`${p.product_name}\n${p.product_id}`, p.orders, p.orderLines, p.unitsSold, p.returnedUnits, pc(p.returnRate), rs(p.avgPrice), rs(p.avgNetPrice), rs(p.returnLoss), p.primaryReason ?? "-"]) : [["No product met the minimum order lines", "", "", "", "", "", "", "", "", ""]],
+    body: top.length ? top.map((p) => [`${p.product_name}\n${p.product_id}`, p.orders, p.orderLines, p.unitsSold, p.returnedUnits, pc(p.returnRate), rs(p.avgPrice), rs(p.avgNetPrice), rs(p.returnLoss), p.primaryReason ?? "-"]) : [["No returns in this period", "", "", "", "", "", "", "", "", ""]],
     headStyles: { fillColor: navy }, styles: { fontSize: 7.5 },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

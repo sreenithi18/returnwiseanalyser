@@ -3,6 +3,7 @@ import { cleanRows, mapHeaders, projectRow, REQUIRED_COLUMNS, sha256, type Clean
 import { MAX_FILE_BYTES, MAX_FILES_PER_SESSION } from "./config";
 import { generateDemoRows } from "./demo";
 import type { Line } from "./analytics";
+import { AI_BATCH_SIZE, reasonKey, resolveReason, scrubPII, UNCLASSIFIED, type Classification } from "./reasons";
 
 type FileStat = CleanStats & { name: string };
 export interface SessionStats { files: FileStat[] }
@@ -36,7 +37,7 @@ const tokenInput = (i: { token: string }) => {
 };
 
 async function loadSession(db: Awaited<ReturnType<typeof admin>>, token: string) {
-  const { data } = await db.from("rw_sessions").select("*").eq("token_hash", await sha256(token)).maybeSingle();
+  const { data } = await db.from("rw_sessions").select("*").eq("token_hash", await sha256(token)).gt("expires_at", new Date().toISOString()).maybeSingle();
   return data;
 }
 async function requireSession(db: Awaited<ReturnType<typeof admin>>, token: string) {
@@ -55,6 +56,57 @@ async function insertProblems(db: Awaited<ReturnType<typeof admin>>, sessionId: 
   for (let i = 0; i < problems.length; i += 500) {
     await db.from("rw_rejected_rows").insert(problems.slice(i, i + 500).map((p) => ({ ...p, session_id: sessionId, file_name: fileName })));
   }
+}
+
+type Db = Awaited<ReturnType<typeof admin>>;
+
+async function loadReasonCache(db: Db, sessionId: string): Promise<Map<string, Classification>> {
+  const cache = new Map<string, Classification>();
+  for (let from = 0; ; from += 1000) {
+    const { data } = await db.from("rw_reason_cache").select("reason_key,issue_label,theme,confidence").eq("session_id", sessionId).range(from, from + 999);
+    data?.forEach((r) => cache.set(r.reason_key, { issue_label: r.issue_label, theme: r.theme, confidence: r.confidence as Classification["confidence"] }));
+    if (!data || data.length < 1000) break;
+  }
+  return cache;
+}
+
+/**
+ * Classifies every unique, not-yet-cached return reason of the session with AI.
+ * Only scrubbed reason text and product category are sent. Returns false if AI was unavailable.
+ */
+async function classifySession(db: Db, sessionId: string): Promise<boolean> {
+  const cache = await loadReasonCache(db, sessionId);
+  const todo = new Map<string, { text: string; category: string }>();
+  for (let from = 0; ; from += 1000) {
+    const { data } = await db.from("rw_order_lines").select("return_reason,category").eq("session_id", sessionId).eq("returned", true).order("id").range(from, from + 999);
+    for (const r of data ?? []) {
+      if (!r.return_reason?.trim()) continue;
+      const key = reasonKey(r.return_reason, r.category);
+      if (!cache.has(key) && !todo.has(key)) todo.set(key, { text: r.return_reason, category: r.category });
+    }
+    if (!data || data.length < 1000) break;
+  }
+  if (!todo.size) return true;
+  const { classifyBatch } = await import("./ai.server");
+  const themes = new Set([...cache.values()].map((c) => c.theme));
+  const entries = [...todo];
+  let ok = true;
+  for (let i = 0; i < entries.length; i += AI_BATCH_SIZE) {
+    const batch = entries.slice(i, i + AI_BATCH_SIZE);
+    try {
+      const res = await classifyBatch(batch.map(([, v], j) => ({ id: j, text: scrubPII(v.text).slice(0, 300), category: v.category })), [...themes]);
+      const rows = batch.flatMap(([key], j) => {
+        const c = res.get(j);
+        if (!c) { ok = false; return []; }
+        themes.add(c.theme);
+        return [{ session_id: sessionId, reason_key: key, ...c }];
+      });
+      if (rows.length) await db.from("rw_reason_cache").upsert(rows, { onConflict: "session_id,reason_key", ignoreDuplicates: true });
+    } catch {
+      return false;
+    }
+  }
+  return ok;
 }
 
 const toInfo = (s: { created_at: string; expires_at: string; is_demo: boolean; confirmed: boolean; file_count: number; stats: unknown }): SessionInfo => ({
@@ -79,6 +131,7 @@ export const startSession = createServerFn({ method: "POST" })
         confirmed: true, file_count: 1,
         stats: { files: [{ name: "Synthetic demo data", ...stats }] },
       }).eq("id", s.id);
+      await classifySession(db, s.id);
     }
     return { token };
   });
@@ -200,7 +253,16 @@ export const confirmAnalysis = createServerFn({ method: "POST" })
     const { count } = await db.from("rw_order_lines").select("id", { count: "exact", head: true }).eq("session_id", s.id);
     if (!count) throw new Error("There are no valid rows to analyse. Upload a file with valid data first.");
     await db.from("rw_sessions").update({ confirmed: true }).eq("id", s.id);
-    return { ok: true };
+    const aiOk = await classifySession(db, s.id);
+    return { ok: true, aiOk };
+  });
+
+export const retryClassification = createServerFn({ method: "POST" })
+  .validator(tokenInput)
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const s = await requireSession(db, data.token);
+    return { aiOk: await classifySession(db, s.id) };
   });
 
 export const getLines = createServerFn({ method: "POST" })
@@ -208,15 +270,23 @@ export const getLines = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await admin();
     const s = await requireSession(db, data.token);
+    const cache = await loadReasonCache(db, s.id);
     const lines: Line[] = [];
     for (let from = 0; ; from += 1000) {
       const { data: rows } = await db.from("rw_order_lines")
-        .select("order_ref,platform,product_id,product_name,category,order_date,price,quantity,discount,payment_type,returned,returned_qty,reason_category")
+        .select("order_ref,platform,product_id,product_name,category,order_date,price,quantity,discount,payment_type,returned,returned_qty,return_reason")
         .eq("session_id", s.id).order("id").range(from, from + 999);
-      if (rows) lines.push(...rows.map((r) => ({ ...r, price: Number(r.price), discount: Number(r.discount) })));
+      for (const { return_reason, ...r } of rows ?? []) {
+        const c = r.returned ? resolveReason(return_reason, r.category, cache) : null;
+        lines.push({
+          ...r, price: Number(r.price), discount: Number(r.discount),
+          reason_category: c?.theme ?? null, reason_label: c?.issue_label ?? null, reason_confidence: c?.confidence ?? null,
+        });
+      }
       if (!rows || rows.length < 1000) break;
     }
-    return { info: toInfo(s), lines };
+    const aiUnavailable = lines.some((l) => l.reason_category === UNCLASSIFIED);
+    return { info: toInfo(s), lines, aiUnavailable };
   });
 
 export const endSession = createServerFn({ method: "POST" })

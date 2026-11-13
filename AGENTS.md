@@ -30,6 +30,8 @@ use the editor.
 <!-- LOVABLE:END -->
 
 - ReturnWise: all data access goes through server functions in src/lib/returnwise/server.functions.ts using the admin client keyed by a hashed Session ID (no login; tables have RLS with no policies). Why: sessions are anonymous and each request must purge expired sessions first.
-- Cleaning, classification and analytics are pure modules in src/lib/returnwise/ shared by uploads and the demo; editable keywords/settings live in config.ts. Why: one code path, testable in src/test/returnwise.test.ts.
+- Cleaning, reason helpers (reasons.ts) and analytics are pure modules in src/lib/returnwise/ shared by uploads and the demo; editable settings live in config.ts. Why: one code path, testable in src/test/returnwise.test.ts.
+- Return reasons are classified by AI (ai.server.ts, loaded dynamically inside server functions) on demo start/confirm; results live in rw_reason_cache keyed by reasonKey(text, category) and are joined onto lines in getLines (missing = "Unclassified" + banner). Only scrubPII'd reason text + category is sent. Why: each text is classified once per session and the app keeps working when AI fails.
+- Reason colours come from reasonColorMap(all lines) passed via AnalysisCtx.colors. Why: one fixed colour per theme across every chart and month.
 - ReturnWise orders: "Orders" = unique order_ref, "Order lines" = stored rows; order_ref is a session-salted hash of platform+Order_ID made in cleanRows. Why: counts must match across review, dashboard, products and PDF without storing real order IDs.
 - ReturnWise date/time display goes through src/lib/returnwise/format.ts (UI and PDF). Why: one consistent date format everywhere.
