@@ -76,6 +76,7 @@ export function TopProductCards({ lines, colors }: { lines: Line[]; colors: Reco
                 <div>
                   <div className="text-xs text-muted-foreground">Primary reason</div>
                   <div className="mt-1"><ReasonBadge reason={p.primaryReason} colors={colors} /></div>
+                  {p.primaryIssue && p.primaryIssue !== p.primaryReason && <div className="mt-1 text-xs text-muted-foreground">Top issue: {p.primaryIssue}</div>}
                 </div>
               </div>
               <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-1 border-t pt-3 text-sm">
