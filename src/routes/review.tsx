@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { SimpleShell, StateMessage, Stepper } from "@/components/returnwise/AppShell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { confirmAnalysis, getReview } from "@/lib/returnwise/server.functions";
-import { isExpiredError, useToken } from "@/lib/returnwise/client";
+import { clearToken, isExpiredError, useToken } from "@/lib/returnwise/client";
+import { useEffect } from "react";
 import { downloadProblems } from "@/lib/returnwise/excel-client";
 
 export const Route = createFileRoute("/review")({
@@ -27,6 +28,8 @@ function Review() {
   const [busy, setBusy] = useState(false);
   const q = useQuery({ queryKey: ["review", token], queryFn: () => getReview({ data: { token: token! } }), enabled: !!token, retry: false });
 
+  const expired = isExpiredError(q.error);
+  useEffect(() => { if (expired) clearToken(); }, [expired]);
   if (!ready || (token && q.isLoading)) return <SimpleShell><Skeleton className="h-10 w-72" /><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div></SimpleShell>;
   if (!token || q.error) return <SimpleShell><StateMessage title={!token || isExpiredError(q.error) ? "Session expired, please start a new analysis." : "Could not load the review"} action={<Button asChild><Link to="/">Go to home</Link></Button>} /></SimpleShell>;
   const { info, problems, counts } = q.data!;

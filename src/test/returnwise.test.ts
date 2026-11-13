@@ -48,9 +48,21 @@ describe("ReturnWise rules", () => {
     expect(top).toEqual(["ELC-EAR-01", "FSH-KUR-01", "HOM-LMP-01"]);
     expect(filterMonth(lines, "2026-09").every((l) => l.order_date.startsWith("2026-09"))).toBe(true);
   });
-  it("needs 20 order lines to be problematic", async () => {
+  it("needs 20 order lines (all lines, not only returned) to be problematic; else low-sample fallback", async () => {
     const { clean } = await cleanRows([base], new Set());
-    expect(topProblematic(clean as unknown as Line[]).qualifyingCount).toBe(0);
+    const r = topProblematic(clean as unknown as Line[]);
+    expect(r.qualifyingCount).toBe(0);
+    expect(r.lowSample).toBe(true);
+    expect(r.products.length).toBe(1);
+    const rows = Array.from({ length: 20 }, (_, i) => ({ ...base, Order_ID: `Q${i}`, Return_Status: i === 0 ? "Returned" : "Not Returned" }));
+    const q = topProblematic((await cleanRows(rows, new Set())).clean as unknown as Line[]);
+    expect(q.qualifyingCount).toBe(1);
+    expect(q.lowSample).toBe(false);
+  });
+  it("demo month filter still shows top products (low sample)", async () => {
+    const lines = (await cleanRows(generateDemoRows(600), new Set())).clean as unknown as Line[];
+    const r = topProblematic(filterMonth(lines, "2026-09"));
+    expect(r.products.length).toBe(3);
   });
   it("orders = unique order IDs, order lines = rows; returned orders counted once per order", async () => {
     const { clean } = await cleanRows([base, { ...base, Product_ID: "p2" }, { ...base, Order_ID: "A2", Return_Status: "Delivered" }], new Set(), 2, "s1");
