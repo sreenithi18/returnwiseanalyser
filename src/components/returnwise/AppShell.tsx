@@ -99,13 +99,13 @@ export function ExitDemoButton() {
   );
 }
 
-function SessionActions({ isDemo }: { isDemo?: boolean }) {
+function SessionActions({ isDemo }: { isDemo?: boolean | undefined }) {
   const { token } = useToken();
   if (!token) return null;
   return isDemo ? <ExitDemoButton /> : <EndSessionButton />;
 }
 
-export function SimpleShell({ children, isDemo }: { children: ReactNode; isDemo?: boolean }) {
+export function SimpleShell({ children, isDemo }: { children: ReactNode; isDemo?: boolean | undefined }) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur">
