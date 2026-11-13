@@ -1,9 +1,5 @@
-import {
-  MIN_ORDER_LINES_FOR_PROBLEMATIC,
-  RECOMMENDATIONS,
-  REASON_CATEGORIES,
-  type ReasonCategory,
-} from "./config";
+import { MIN_ORDER_LINES_FOR_PROBLEMATIC, PRIORITY_HIGH_SHARE, PRIORITY_MEDIUM_SHARE } from "./config";
+import { NO_REASON, UNCLASSIFIED } from "./reasons";
 
 export interface Line {
   /** Pseudonymous order reference: same value for every line of the same order. */
@@ -19,7 +15,11 @@ export interface Line {
   payment_type: string | null;
   returned: boolean;
   returned_qty: number;
+  /** AI theme for returned lines ("No reason given" / "Unclassified" when applicable). */
   reason_category: string | null;
+  /** AI issue label (detail), e.g. "Size too small". */
+  reason_label?: string | null;
+  reason_confidence?: string | null;
 }
 
 export const ALL_MONTHS = "all";
@@ -71,13 +71,33 @@ export function kpis(lines: Line[]): Kpis {
   };
 }
 
-export function reasonCounts(lines: Line[]): { reason: ReasonCategory; count: number }[] {
+/** Returned units per theme, largest first. */
+export function reasonCounts(lines: Line[]): { reason: string; count: number }[] {
   const m = new Map<string, number>();
-  for (const l of lines) if (l.returned && l.reason_category) m.set(l.reason_category, (m.get(l.reason_category) ?? 0) + l.returned_qty);
-  return REASON_CATEGORIES.map((r) => ({ reason: r, count: m.get(r) ?? 0 }))
-    .filter((r) => r.count > 0)
+  for (const l of lines) if (l.returned && l.returned_qty > 0) {
+    const r = l.reason_category ?? NO_REASON;
+    m.set(r, (m.get(r) ?? 0) + l.returned_qty);
+  }
+  return [...m].map(([reason, count]) => ({ reason, count })).filter((r) => r.count > 0)
+    .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
+}
+
+/** Returned units per specific issue label (detail under each theme). `unsure` = all its lines are low confidence. */
+export function issueCounts(lines: Line[]): { label: string; theme: string; count: number; unsure: boolean }[] {
+  const m = new Map<string, { label: string; theme: string; count: number; low: number; n: number }>();
+  for (const l of lines) if (l.returned && l.returned_qty > 0) {
+    const label = l.reason_label ?? l.reason_category ?? NO_REASON;
+    const theme = l.reason_category ?? NO_REASON;
+    const k = `${theme}|${label}`;
+    const e = m.get(k) ?? { label, theme, count: 0, low: 0, n: 0 };
+    e.count += l.returned_qty; e.n++; if (l.reason_confidence === "low") e.low++;
+    m.set(k, e);
+  }
+  return [...m.values()].map((e) => ({ label: e.label, theme: e.theme, count: e.count, unsure: e.n > 0 && e.low === e.n }))
     .sort((a, b) => b.count - a.count);
 }
+
+const topLabel = (ls: Line[]) => issueCounts(ls)[0]?.label ?? null;
 
 export interface ProductStat {
   product_id: string;
@@ -93,10 +113,19 @@ export interface ProductStat {
   /** Average net unit price after discount per order line. */
   avgNetPrice: number;
   returnLoss: number;
-  primaryReason: ReasonCategory | null;
-  secondaryReason: ReasonCategory | null;
+  primaryReason: string | null;
+  secondaryReason: string | null;
+  /** Most reported issue label for the primary theme. */
+  primaryIssue: string | null;
   qualifies: boolean;
   action: string;
+}
+
+function productAction(theme: string | null, issue: string | null): string {
+  if (!theme) return "No returns recorded — keep monitoring.";
+  if (theme === NO_REASON) return "Check the platform return reports: buyers gave no reason for most returns.";
+  if (theme === UNCLASSIFIED) return "Check the return comments for this product manually.";
+  return `Check why buyers report "${issue ?? theme}" for this product.`;
 }
 
 export function productStats(lines: Line[], minLines = MIN_ORDER_LINES_FOR_PROBLEMATIC): ProductStat[] {
@@ -107,6 +136,7 @@ export function productStats(lines: Line[], minLines = MIN_ORDER_LINES_FOR_PROBL
     const k = kpis(ls);
     const reasons = reasonCounts(ls);
     const primary = reasons[0]?.reason ?? null;
+    const primaryIssue = primary ? topLabel(ls.filter((l) => l.reason_category === primary)) : null;
     out.push({
       product_id: pid,
       product_name: ls[0]!.product_name,
@@ -121,8 +151,9 @@ export function productStats(lines: Line[], minLines = MIN_ORDER_LINES_FOR_PROBL
       returnLoss: k.returnLoss,
       primaryReason: primary,
       secondaryReason: reasons[1]?.reason ?? null,
+      primaryIssue,
       qualifies: ls.length >= minLines,
-      action: primary ? RECOMMENDATIONS[primary] : "No returns recorded — keep monitoring.",
+      action: productAction(primary, primaryIssue),
     });
   }
   return out.sort((a, b) => b.returnLoss - a.returnLoss || b.returnRate - a.returnRate);
@@ -158,39 +189,51 @@ export function monthlyTrend(lines: Line[]) {
 
 export type Priority = "High" | "Medium" | "Low";
 export interface Recommendation {
-  reason: ReasonCategory;
+  reason: string;
   problem: string;
   evidence: string;
   action: string;
   priority: Priority;
+  /** Share of total return loss. */
   share: number;
+  loss: number;
 }
 
 const inr = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
+export const priorityFor = (lossShare: number): Priority =>
+  lossShare >= PRIORITY_HIGH_SHARE ? "High" : lossShare >= PRIORITY_MEDIUM_SHARE ? "Medium" : "Low";
+export const PRIORITY_RULE = `Priority = share of total return loss: High ${PRIORITY_HIGH_SHARE * 100}% or more, Medium ${PRIORITY_MEDIUM_SHARE * 100}–${PRIORITY_HIGH_SHARE * 100}%, Low below ${PRIORITY_MEDIUM_SHARE * 100}%.`;
 
+/** One recommendation per theme, built only from the themes and evidence figures. Sorted by loss. */
 export function recommendations(lines: Line[]): Recommendation[] {
-  const counts = reasonCounts(lines);
-  const total = counts.reduce((s, c) => s + c.count, 0);
-  if (!total) return [];
-  return counts.map(({ reason, count }) => {
-    const ls = lines.filter((l) => l.returned && l.reason_category === reason);
+  const returned = lines.filter((l) => l.returned && l.returned_qty > 0);
+  const totalUnits = returned.reduce((s, l) => s + l.returned_qty, 0);
+  const totalLoss = returned.reduce((s, l) => s + netUnitPrice(l.price, l.discount) * l.returned_qty, 0);
+  if (!totalUnits) return [];
+  return reasonCounts(lines).map(({ reason, count }) => {
+    const ls = returned.filter((l) => (l.reason_category ?? NO_REASON) === reason);
     const loss = ls.reduce((s, l) => s + netUnitPrice(l.price, l.discount) * l.returned_qty, 0);
-    const prodLoss = new Map<string, { name: string; units: number }>();
+    const prod = new Map<string, { name: string; loss: number }>();
     for (const l of ls) {
-      const p = prodLoss.get(l.product_id) ?? { name: l.product_name, units: 0 };
-      p.units += l.returned_qty;
-      prodLoss.set(l.product_id, p);
+      const p = prod.get(l.product_id) ?? { name: l.product_name, loss: 0 };
+      p.loss += netUnitPrice(l.price, l.discount) * l.returned_qty;
+      prod.set(l.product_id, p);
     }
-    const topProds = [...prodLoss.values()].sort((a, b) => b.units - a.units).slice(0, 2).map((p) => `${p.name} (${p.units})`);
-    const share = count / total;
-    const priority: Priority = share >= 0.25 ? "High" : share >= 0.1 ? "Medium" : "Low";
+    const topProds = [...prod.values()].sort((a, b) => b.loss - a.loss).slice(0, 2).map((p) => p.name);
+    const issues = issueCounts(ls).slice(0, 2).map((i) => `"${i.label}"`);
+    const share = totalLoss ? loss / totalLoss : 0;
+    let action: string;
+    if (reason === NO_REASON) action = `Check the platform return reports for ${topProds.join(" and ")}: buyers gave no reason for these returns.`;
+    else if (reason === UNCLASSIFIED) action = `Check these return comments manually for ${topProds.join(" and ")}.`;
+    else action = `Check ${topProds.join(" and ")} for ${issues.join(" and ")}.`;
     return {
       reason,
       problem: `${reason} returns`,
-      evidence: `${count} returned units (${(share * 100).toFixed(1)}% of returns), est. loss ${inr(loss)}. Most affected: ${topProds.join(", ")}.`,
-      action: RECOMMENDATIONS[reason],
-      priority,
+      evidence: `${count} returned units (${((count / totalUnits) * 100).toFixed(1)}% of returns), est. loss ${inr(loss)} (${(share * 100).toFixed(1)}% of total return loss). Affected products: ${prod.size} (most: ${topProds.join(", ")}).`,
+      action,
+      priority: priorityFor(share),
       share,
+      loss,
     };
-  });
+  }).sort((a, b) => b.loss - a.loss);
 }
