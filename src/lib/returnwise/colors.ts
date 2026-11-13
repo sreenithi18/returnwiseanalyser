@@ -1,7 +1,7 @@
 // One fixed colour per return reason theme, used by every chart and badge.
 import { reasonCounts, type Line } from "./analytics";
 
-export const NEUTRAL_REASONS = new Set(["No reason given", "Unclassified", "Other/needs review"]);
+export const NEUTRAL_REASONS = new Set(["No reason given", "Unclassified", "Unclear"]);
 const PALETTE = Array.from({ length: 10 }, (_, i) => `var(--chart-${i + 1})`);
 export const NEUTRAL_COLOR = "var(--chart-neutral)";
 

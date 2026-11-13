@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { NO_REASON, reasonKey, resolveReason, scrubPII, UNCLASSIFIED } from "@/lib/returnwise/reasons";
 import { priorityFor, recommendations } from "@/lib/returnwise/analytics";
-import { cleanRows, mapHeaders, parseDate } from "@/lib/returnwise/cleaning";
+import { cleanRows, mapHeaders, parseDate, REQUIRED_COLUMNS } from "@/lib/returnwise/cleaning";
 import { filterMonth, kpis, netUnitPrice, topProblematic, type Line } from "@/lib/returnwise/analytics";
 import { generateDemoRows } from "@/lib/returnwise/demo";
-import { deletionNotice, fmtDate, shortId } from "@/lib/returnwise/format";
+import { deletionNotice, fmtDate, inrShort, shortId } from "@/lib/returnwise/format";
+import { rateTone } from "@/lib/returnwise/colors";
 import { productStats } from "@/lib/returnwise/analytics";
 
 const base = { Platform: "amazon", Order_ID: "A1", Product_ID: "p1", Product_Name: " Kurti ", Product_Category: "Fashion", Order_Date: "05/10/2026", Price: 1000, Quantity: 2, Return_Status: "Returned", Returned_Quantity: 1, Discount_Applied: 10, Return_Reason: "size chota" };
@@ -28,6 +29,13 @@ describe("ReturnWise rules", () => {
     expect(r.clean[0]!.returned_qty).toBe(2);
   });
   it("reports missing required columns", () => expect(mapHeaders(["Platform", "Order_ID"]).missing).toContain("Price"));
+  it("matches headers regardless of case, spaces and underscores", () => {
+    const h = ["platform", "ORDER ID", "product_id", "Product Name", "product category", "order-date", "PRICE", "quantity", "Return_status"];
+    expect(mapHeaders(h).missing).toEqual([]);
+  });
+  it("a file matching none of the required columns is a template mismatch", () => {
+    expect(mapHeaders(["Name", "Phone", "Address"]).missing.length).toBe(REQUIRED_COLUMNS.length);
+  });
   it("parses mixed date formats", () => {
     expect(parseDate("05/10/2026")[0]).toBe("2026-10-05");
     expect(parseDate("12 Oct 2026")[0]).toBe("2026-10-12");
@@ -43,6 +51,17 @@ describe("ReturnWise rules", () => {
     expect(resolveReason("  ", "Fashion", cache).theme).toBe(NO_REASON);
     expect(resolveReason("size  chota", "fashion", cache).issue_label).toBe("Size too small");
     expect(resolveReason("kharab", "Fashion", cache).theme).toBe(UNCLASSIFIED);
+  });
+  it("return rate colours: green below 10%, amber 10-20%, red above 20%", () => {
+    expect(rateTone(0.099)).toBe("good");
+    expect(rateTone(0.1)).toBe("warn");
+    expect(rateTone(0.2)).toBe("warn");
+    expect(rateTone(0.201)).toBe("bad");
+  });
+  it("short amounts", () => {
+    expect(inrShort(573557)).toBe("₹5.7L");
+    expect(inrShort(45300)).toBe("₹45.3K");
+    expect(inrShort(12500000)).toBe("₹1.3Cr");
   });
   it("priority = share of total return loss: High >=25%, Medium 10-25%, Low <10%", () => {
     expect(priorityFor(0.25)).toBe("High");
