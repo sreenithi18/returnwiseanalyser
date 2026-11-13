@@ -113,7 +113,7 @@ export function SimpleShell({ children, isDemo }: { children: ReactNode; isDemo?
           <Logo />
           <div className="flex flex-wrap items-center gap-2">
             <SessionChip />
-            <SessionActions isDemo={isDemo} />
+            <SessionActions isDemo={!!isDemo} />
           </div>
         </div>
       </header>
@@ -181,7 +181,7 @@ export function AppShell({
             <div className="ml-auto flex flex-wrap items-center gap-2">
               {expiresAt && <DeletionNotice expiresAt={expiresAt} />}
               <SessionChip />
-              <SessionActions isDemo={isDemo} />
+              <SessionActions isDemo={!!isDemo} />
             </div>
           </div>
         </header>
