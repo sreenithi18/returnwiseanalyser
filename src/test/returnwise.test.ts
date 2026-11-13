@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { classifyReason } from "@/lib/returnwise/classifier";
+import { NO_REASON, reasonKey, resolveReason, scrubPII, UNCLASSIFIED } from "@/lib/returnwise/reasons";
+import { priorityFor, recommendations } from "@/lib/returnwise/analytics";
 import { cleanRows, mapHeaders, parseDate } from "@/lib/returnwise/cleaning";
 import { filterMonth, kpis, netUnitPrice, topProblematic, type Line } from "@/lib/returnwise/analytics";
 import { generateDemoRows } from "@/lib/returnwise/demo";
@@ -32,11 +33,32 @@ describe("ReturnWise rules", () => {
     expect(parseDate("12 Oct 2026")[0]).toBe("2026-10-12");
     expect(parseDate("2026-10-03")[0]).toBe("2026-10-03");
   });
-  it("classifies Hinglish and unknown reasons", () => {
-    expect(classifyReason("bahut chota hai", "Fashion")).toBe("Size/Fit");
-    expect(classifyReason("toota hua aaya")).toBe("Damaged in transit");
-    expect(classifyReason("kharab nikla")).toBe("Defective");
-    expect(classifyReason("personal reasons")).toBe("Other/needs review");
+  it("scrubs phone numbers, emails and URLs before sending reasons to AI", () => {
+    const out = scrubPII("call me 98765 43210 or +91-9876543210, mail a.b@x.com, see https://x.com/p and www.shop.in");
+    expect(out).not.toMatch(/9876|@|https|www/);
+    expect(scrubPII("size chota hai")).toBe("size chota hai");
+  });
+  it("blank reasons are No reason given; uncached are Unclassified; same text shares one result", () => {
+    const cache = new Map([[reasonKey("Size Chota", "Fashion"), { issue_label: "Size too small", theme: "Size & fit", confidence: "high" as const }]]);
+    expect(resolveReason("  ", "Fashion", cache).theme).toBe(NO_REASON);
+    expect(resolveReason("size  chota", "fashion", cache).issue_label).toBe("Size too small");
+    expect(resolveReason("kharab", "Fashion", cache).theme).toBe(UNCLASSIFIED);
+  });
+  it("priority = share of total return loss: High >=25%, Medium 10-25%, Low <10%", () => {
+    expect(priorityFor(0.25)).toBe("High");
+    expect(priorityFor(0.249)).toBe("Medium");
+    expect(priorityFor(0.1)).toBe("Medium");
+    expect(priorityFor(0.099)).toBe("Low");
+  });
+  it("recommendations are sorted by loss and prioritised by loss share, as Check statements", async () => {
+    const mk = (id: string, price: number, theme: string) => ({ ...base, Order_ID: id, Price: price, Discount_Applied: 0, Returned_Quantity: 1, Quantity: 1 });
+    const { clean } = await cleanRows([mk("a", 100, "x"), mk("b", 900, "y")], new Set());
+    const lines = (clean as unknown as Line[]).map((l, i) => ({ ...l, reason_category: i === 0 ? "Cheap theme" : "Costly theme", reason_label: "Issue" }));
+    const recs = recommendations(lines);
+    expect(recs.map((r) => r.reason)).toEqual(["Costly theme", "Cheap theme"]);
+    expect(recs[0]!.priority).toBe("High");
+    expect(recs[1]!.priority).toBe("Medium");
+    expect(recs.every((r) => r.action.startsWith("Check "))).toBe(true);
   });
   it("demo: ~600 lines, 12-18% return rate, top 3 are the designed worst products", async () => {
     const { clean } = await cleanRows(generateDemoRows(600), new Set());

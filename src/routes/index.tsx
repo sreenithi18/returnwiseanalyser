@@ -151,7 +151,7 @@ function Home() {
           <span className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-5 w-5 text-success" /> Private by design</span>
           <ul className="grid flex-1 gap-2 text-sm text-muted-foreground sm:grid-cols-3">
             <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-success" /> No login. Your data is used only for your analysis.</li>
-            <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-success" /> Names, phones and addresses are dropped before saving.</li>
+            <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-success" /> Names, phones and addresses are dropped before saving. Only return reason text goes to AI.</li>
             <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-success" /> Everything is deleted automatically after 24 hours.</li>
           </ul>
         </div>

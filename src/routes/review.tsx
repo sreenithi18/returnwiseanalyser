@@ -43,7 +43,8 @@ function Review() {
   async function confirm() {
     setBusy(true);
     try {
-      await confirmAnalysis({ data: { token: token! } });
+      const r = await confirmAnalysis({ data: { token: token! } });
+      if (!r.aiOk) toast.warning("AI classification is unavailable. Showing unclassified reasons.");
       qc.invalidateQueries();
       navigate({ to: "/dashboard" });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Could not continue"); }
@@ -99,7 +100,7 @@ function Review() {
       {t.valid === 0 && <p role="alert" className="mt-4 text-sm text-destructive">No valid rows yet. Fix the file and upload again.</p>}
       <div className="mt-6 flex flex-wrap justify-between gap-3">
         <Button asChild variant="outline"><Link to="/upload">Upload another file</Link></Button>
-        <Button size="lg" onClick={confirm} disabled={busy || t.valid === 0}>{busy ? "Preparing…" : "Confirm and analyse"}</Button>
+        <Button size="lg" onClick={confirm} disabled={busy || t.valid === 0}>{busy ? "Analysing return reasons…" : "Confirm and analyse"}</Button>
       </div>
     </SimpleShell>
   );
