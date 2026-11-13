@@ -8,7 +8,7 @@ import { Boxes, IndianRupee, Layers, Percent, ShoppingBag, TrendingDown, Undo2, 
 import { AnalysisPage, type AnalysisCtx } from "@/components/returnwise/AnalysisPage";
 import { Card, StateMessage } from "@/components/returnwise/AppShell";
 import { Amount } from "@/components/returnwise/Amount";
-import { groupRates, kpis, monthlyTrend, reasonCounts, type Line } from "@/lib/returnwise/analytics";
+import { groupRates, issueCounts, kpis, monthlyTrend, reasonCounts, type Line } from "@/lib/returnwise/analytics";
 import { colorFor } from "@/lib/returnwise/colors";
 import { pct } from "@/lib/returnwise/client";
 import { InfoTip, RATE_LABEL, RATE_TIP, ReturnRateLabel } from "@/components/returnwise/InfoTip";
@@ -136,6 +136,22 @@ function Dashboard({ lines, all, colors }: AnalysisCtx) {
             </div>
           </Card>
         </div>
+      )}
+      {reasons.length > 0 && (
+        <Card>
+          <h2 className="font-semibold">Top issues (detail)</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Specific problems buyers mentioned, grouped into the themes above. “Unsure” = the AI had low confidence.</p>
+          <ul className="mt-4 grid gap-x-8 gap-y-2 text-sm md:grid-cols-2">
+            {issueCounts(lines).slice(0, 10).map((i) => (
+              <li key={`${i.theme}|${i.label}`} className="flex items-center gap-2 border-b py-1.5">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: colorFor(colors, i.theme) }} />
+                <span className="flex-1">{i.label} <span className="text-xs text-muted-foreground">· {i.theme}</span></span>
+                {i.unsure && <span className="rounded-full bg-warning-soft px-2 py-0.5 text-[11px] font-semibold text-warning-foreground">Unsure</span>}
+                <span className="font-semibold tabular">{i.count}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
       <Card>
         <h2 className="flex items-center gap-1 font-semibold">Monthly {RATE_LABEL.toLowerCase()} trend (all months) <InfoTip tip={RATE_TIP} /></h2>

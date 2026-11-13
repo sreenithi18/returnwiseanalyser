@@ -88,7 +88,7 @@ function Summary({ lines, all, month, info, colors }: AnalysisCtx) {
         </ol>
       </Card>
       <section><h2 className="text-lg font-semibold">Top 3 loss-causing products</h2><p className="mb-3 mt-1 text-sm text-muted-foreground">{LOSS_FORMULA}</p><TopProductCards lines={lines} colors={colors} /></section>
-      <RecList lines={lines} />
+      <RecList lines={lines} colors={colors} />
       <Card>
         <h2 className="font-semibold">Data quality</h2>
         <p className="mt-1 text-sm">{dq.uploaded} rows uploaded · {dq.orderLines} order lines (valid rows) · {dq.orders} orders (unique order IDs) · {dq.duplicates} duplicates removed · {dq.rejected} rejected · {dq.flagged} flagged</p>
